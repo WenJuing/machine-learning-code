@@ -1,3 +1,5 @@
 import numpy as np
-a = np.linspace(1,10,num=5)
-print(a[2])
+
+
+a = [1,2,3]
+print(a[:2])
