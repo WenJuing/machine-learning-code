@@ -1,5 +1,11 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 
-a = [1,2,3]
-print(a[:2])
+x = np.arange(-40,40)
+y = []
+for i in x:
+    t = np.round(1 / (1 + np.exp(-i)), 4)
+    y.append(t)
+plt.plot(x,y)
+plt.show()
