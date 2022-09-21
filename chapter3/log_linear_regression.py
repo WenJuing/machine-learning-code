@@ -32,7 +32,7 @@ def get_b(x, y, w):
 if __name__ == "__main__":
     N = 100  # 样本个数
     x = np.arange(N)
-    y = [np.log(i+1) + np.random.randn()*0.2 for i in x]
+    y = [np.log(i+5) + np.random.randn()*0.2 for i in x]
     w = get_w(x, y)
     b = get_b(x, y, w)
 

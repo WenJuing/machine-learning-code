@@ -1,11 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
 
 
-x = np.arange(-40,40)
-y = []
-for i in x:
-    t = np.round(1 / (1 + np.exp(-i)), 4)
-    y.append(t)
-plt.plot(x,y)
-plt.show()
+a = [1, 2, 3, 4, 9, 3]  # 列表
+print(a.index(max(a)))
+a = np.array([1, 2, 3, 4, 9, 3])    # 数组
+print(np.argmax(a))
