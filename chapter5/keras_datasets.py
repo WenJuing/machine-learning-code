@@ -1,3 +1,4 @@
+# 使用keras提供的mnist手写数字数据集
 import matplotlib.pyplot as plt
 from keras.datasets import mnist
 
