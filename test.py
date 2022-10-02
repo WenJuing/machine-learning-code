@@ -1,13 +1,9 @@
+from re import A
 import matplotlib.pyplot as plt
+import numpy as np
 from keras.datasets import mnist
+import tensorflow as tf
 
-
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-plt.subplots_adjust(hspace=0.6, wspace=0.4)     # 调整图片上下和左右间距
-for i in range(25):
-    plt.subplot(5, 5, i + 1)
-    plt.axis('off')
-    plt.imshow(x_train[i], cmap=plt.cm.gray)     # 第二个参数设置灰度图像
-    plt.title('no:%d label:%d' % (i, y_train[i]), fontsize=10)
-    
-plt.show()
+# (x_train, y_train), (x_test, y_test) = mnist.load_data()
+f = lambda a, b: a * b
+print(f(3, 4))
