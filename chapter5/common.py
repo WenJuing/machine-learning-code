@@ -16,15 +16,20 @@ def softmax(a):
 
 
 def mean_squared_error(y, t):
-    """均方误差"""
+    """均方误差，t为标记向量"""
     return np.sum((y - t)**2) / 2
 
 
 def cross_entropy_error(y, t):
-    """交叉熵误差"""
+    """交叉熵误差, t为标记"""
     if y.ndim == 1:
         y = y.reshape(1, y.size)
         t = t.reshape(1, t.size)
+        
+    # 监督数据是one-hot-vector的情况下，转换为标记向量的索引
+    if t.size == y.size:
+        t = t.argmax(axis=1)
+    
     batch_size = y.shape[0]
     return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-5)) / batch_size    
 
@@ -50,6 +55,13 @@ def numerical_gradient(f, x):
             fxh2 = f(x)
             grad[i, j] = (fxh1 - fxh2) / (2*h)
             x[i, j] = tmp
-        
+
     return grad
-        
+
+
+def loss(x, t, W1):
+    """计算损失"""
+    a = np.dot(x, W1)
+    y = softmax(a)
+    loss = mean_squared_error(y, t)
+    return loss

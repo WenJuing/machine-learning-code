@@ -46,7 +46,8 @@ def function2(x):
 
 
 if __name__ == '__main__':
-    print(numerical_diff(function1, 5)) # 输出0.1999999999  真实导数：0.2
-    print(numerical_diff(function1, 10)) # 输出0.299999999  真实导数：0.3
-    print(numerical_gradient(function2, np.array([0.5, 0.5])))  # 参数必须为浮点数
-    print(gradient_descent(function2, np.array([-3.0, 4.0]), a=0.1))
+    # print(numerical_diff(function1, 5)) # 输出0.1999999999  真实导数：0.2
+    # print(numerical_diff(function1, 10)) # 输出0.299999999  真实导数：0.3
+    print(numerical_gradient(function2, np.array([3.0, 4.0])))  # 参数必须为浮点数
+    print(numerical_gradient(function2, np.array([3, 4])))  # 参数必须为浮点数
+    # print(gradient_descent(function2, np.array([-3.0, 4.0]), a=0.1))

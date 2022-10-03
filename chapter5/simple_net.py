@@ -3,7 +3,7 @@ import numpy as np
 import common as com
 
 
-class simpleNet():
+class simpleNet:
     """简单神经网络类"""
     def __init__(self) -> None:
         self.W = np.random.randn(2, 3)
@@ -25,12 +25,7 @@ if __name__ == '__main__':
     net = simpleNet()
     print(net.W)
     x = np.array([0.6, 0.9])
-    p = net.predict(x)
-    print(p)
     t = np.array([2])
-    loss = net.loss(x, t)
-    print(loss)
-    
     f = lambda w: net.loss(x, t)
     dW = com.numerical_gradient(f, net.W)
     print(dW)

@@ -5,5 +5,5 @@ from keras.datasets import mnist
 import tensorflow as tf
 
 # (x_train, y_train), (x_test, y_test) = mnist.load_data()
-f = lambda a, b: a * b
-print(f(3, 4))
+a = np.arange(12).reshape(3,4)
+print(a[[0, 1]])
