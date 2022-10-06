@@ -1,7 +1,9 @@
-# 使用层（以购买两个苹果三个橘子为例）
-from layer import MulLayer, AddLayer
+# 使用层
+from layer import *
+import numpy as np
 
 
+# 以购买两个苹果三个橘子为例
 # 设置结点
 apple_mul_layer = MulLayer()
 origin_mul_layer = MulLayer()
@@ -42,3 +44,21 @@ print(dapple_num)
 print(dapple_price)
 print(dorange_num)
 print(dorange_price)
+
+# 使用RuLE层
+relu_layer = Relu()
+x = np.array([[1.0, -0.5], [-2.0, 3.0]])
+x_rule = relu_layer.forward(x)
+dx = relu_layer.backward(x_rule)
+print(x)
+print(x_rule)
+print(dx)
+
+# 使用Sigmoid层
+sigmoid_layer = Sigmoid()
+x = 0
+out = sigmoid_layer.forward(x)
+dout = 1
+dx = sigmoid_layer.backward(dout)
+print(out)
+print(dx)

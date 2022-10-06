@@ -1,7 +1,8 @@
-# 公共函数库
+# 公共库
 import numpy as np
 
 
+# 函数
 def sigmoid(a):
     """隐藏层激活函数"""
     return 1 / (1 + np.exp(-a))
@@ -9,10 +10,8 @@ def sigmoid(a):
 
 def softmax(a):
     """输出层激活函数"""
-    exp_a = np.exp(a)
-    sum_exp_a = np.sum(exp_a)
-    y = exp_a / sum_exp_a
-    return y
+    a = a - np.max(a)   # 防止溢出
+    return np.exp(a) / np.sum(np.exp(a), axis=1).reshape(a.shape[0], 1)
 
 
 def mean_squared_error(y, t):
@@ -31,7 +30,7 @@ def cross_entropy_error(y, t):
         t = t.argmax(axis=1)
     
     batch_size = y.shape[0]
-    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-5)) / batch_size    
+    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size    
 
 
 def numerical_diff(f, x):
@@ -65,3 +64,59 @@ def loss(x, t, W1):
     y = softmax(a)
     loss = mean_squared_error(y, t)
     return loss
+
+
+# 类
+# 更新参数的方法
+class SGD:
+    """随机梯度下降"""
+    def __init__(self, lr=0.01):
+        self.lr = lr
+        
+    def update(self, params, grads):
+        """使用梯度更新参数"""
+        for key in params.keys():
+            params[key] -= self.lr * grads[key]
+            
+        return params
+            
+            
+class Momentum:
+    """Momentum方法"""
+    def __init__(self, lr=0.01, momentum=0.9):
+        self.lr = lr
+        self.momentum = momentum
+        self.v = None
+        
+    def update(self, params, grads):
+        if self.v == None:
+            self.v = {}
+            for key, val in params.items():
+                self.v[key] = np.zeros_like(val)
+        
+        for key in params.keys():
+            self.v[key] = self.momentum*self.v[key] - self.lr*grads[key]
+            params[key] += self.v[key]
+            
+        return params
+        
+            
+class AdaGrad:
+    """AdaGrad方法"""
+    def __init__(self, lr=0.01):
+        self.lr = lr
+        self.h = None
+        
+    def update(self, params, grads):
+        if self.h == None:
+            self.h = {}
+            for key, val in params.items():
+                self.h[key] = np.zeros_like(val)
+                
+        for key in params.keys():
+            self.h[key] += grads[key] * grads[key]
+            params[key] -= self.lr * grads[key] / (np.sqrt(self.h[key]) + 1e-7)   # 分母一般加个微小值
+            
+        return params
+            
+    
