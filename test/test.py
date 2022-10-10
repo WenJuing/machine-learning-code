@@ -9,4 +9,6 @@ import numpy as np
 # (x_train, y_train), (x_test, y_test) = mnist.load_data()
 # x_train = x_train.reshape(-1, 784).astype('float32') / 255  # 样本一维化和归一化
 # t_train = np.array(tf.one_hot(y_train, 10))
-abc = 1
+a = 14
+print("varibable"+"a"+"is"+str(a))
+print("varibable","a","is",str(a))

@@ -66,8 +66,7 @@ def loss(x, t, W1):
     return loss
 
 
-# 类
-# 更新参数的方法
+#  optimizer_calss: 更新参数的类（方式）
 class SGD:
     """随机梯度下降"""
     def __init__(self, lr=0.01):
