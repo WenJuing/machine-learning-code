@@ -1,5 +1,4 @@
 # 训练神经网络类
-from tabnanny import verbose
 import numpy as np
 from common import *
 
@@ -32,6 +31,17 @@ class Trainer:
         
     def train_step(self):
         """训练一次"""
+        # 达到一个epoch时，计算并输出一次mini-btach和测试集的正确率
+        if self.current_iter % self.batch_size == 0:
+            self.current_epoch += 1
+            
+            train_acc = self.network.accuracy(self.x_train, self.t_train)
+            self.train_acc_list.append(train_acc)
+            test_acc = self.network.accuracy(self.x_test, self.t_test)
+            self.test_acc_list.append(test_acc)
+            
+            if self.verbose: print("the", self.current_epoch, "epoch: train acc=", train_acc, "test acc=", test_acc, "="*50)
+            
         mask = np.random.choice(self.train_size, self.batch_size)    # 随机生成mini-batch
         x_train_batch = self.x_train[mask]    
         t_train_batch = self.t_train[mask]    
@@ -44,18 +54,6 @@ class Trainer:
         if self.verbose: print("the", self.current_iter, "time: loss=", loss)
         
         self.current_iter += 1
-        
-        # 达到一个epoch时，计算并输出一次mini-btach和测试集的正确率
-        if self.current_iter % self.batch_size == 0 and self.current_iter != 0:
-            self.current_epoch += 1
-            
-            train_acc = self.network.accuracy(x_train_batch, t_train_batch)
-            self.train_acc_list.append(train_acc)
-            test_acc = self.network.accuracy(self.x_train, self.t_train)
-            self.test_acc_list.append(test_acc)
-            
-            if self.verbose: print("the", self.current_epoch, "epoch: train acc=", train_acc, "test acc=", test_acc, "="*50)
-            
             
     def train(self):
         """训练神经网络"""

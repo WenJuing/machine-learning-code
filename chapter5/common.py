@@ -1,8 +1,10 @@
 # 公共库
 import numpy as np
+from keras.datasets import mnist
+import tensorflow as tf
 
 
-# 函数
+# 神经网络功能相关函数
 def sigmoid(a):
     """隐藏层激活函数"""
     return 1 / (1 + np.exp(-a))
@@ -65,6 +67,33 @@ def loss(x, t, W1):
     loss = mean_squared_error(y, t)
     return loss
 
+
+# 其他函数
+def shuffle_dataset(x, t):
+    """打乱数据集"""
+    random_index = np.random.permutation(x.shape[0])
+    return x[random_index], t[random_index]
+
+def get_mnist_data():
+    """获得mnist数据集"""
+    (x_train, t_train), (x_test, t_test) = mnist.load_data()
+    x_train = x_train.reshape(-1, 784).astype("float32") / 255
+    t_train = np.array(tf.one_hot(t_train, 10))
+    x_test = x_test.reshape(-1, 784).astype("float32") / 255
+    t_test = np.array(tf.one_hot(t_test, 10))
+    return x_train, t_train, x_test, t_test
+
+def divide_validation_data(x, t, validation_rate):
+    """将训练集划分成验证集和训练集"""
+    data_size = x.shape[0]
+    validation_num = int(data_size * validation_rate)
+    x, t = shuffle_dataset(x, t)
+    x_val = x[:validation_num]
+    t_val = t[:validation_num]
+    x_train = x[validation_num:]
+    t_train = t[validation_num:]
+    return x_val, t_val, x_train, t_train
+    
 
 #  optimizer_calss: 更新参数的类（方式）
 class SGD:

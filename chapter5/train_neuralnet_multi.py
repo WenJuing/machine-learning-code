@@ -17,7 +17,7 @@ loss_list = []
 train_acc_list = []     # 训练集识别正确率
 test_acc_list = []      # 测试集识别正确率
 # 超参数
-iters_num = 10000         # 更新次数
+iters_num = 1000         # 更新次数
 learning_rate = 0.1       # 学习率
 batch_size = 100         # mini_batch
 train_size = x_train.shape[0]
