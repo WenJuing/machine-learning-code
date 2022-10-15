@@ -6,7 +6,7 @@ from common import *
 class Trainer:
     """训练神经网络类"""
     def __init__(self, network, x_train, t_train, x_test, t_test, epoch=10, batch_size=100, 
-                 optimizer='SGD', optimizer_param={'lr': 0.01}, verbose=True):
+                 optimizer='SGD', optimizer_param={'lr': 0.01}, rate_of_datanum_to_acc=None, verbose=True):
         self.network = network
         self.x_train = x_train
         self.t_train = t_train
@@ -14,18 +14,20 @@ class Trainer:
         self.t_test = t_test
         self.epoch = epoch
         self.batch_size = batch_size
+        self.rate_of_datanum_to_acc = rate_of_datanum_to_acc
         self.verbose = verbose
         
         self.train_size = x_train.shape[0]
         self.iter_num = self.epoch * self.batch_size
         
         # 更新方式
-        optimizer_class_dict = {'sgd': SGD, 'momentum': Momentum, 'adagrad': AdaGrad}
+        optimizer_class_dict = {'sgd': SGD, 'momentum': Momentum, 'adagrad': AdaGrad, 'adam': Adam}
         self.optimizer = optimizer_class_dict[optimizer.lower()](**optimizer_param)
         
         self.current_iter = 0
         self.current_epoch = 0
-        self.lost_list = []
+        
+        self.loss_list = []
         self.train_acc_list = []
         self.test_acc_list = []
         
@@ -35,22 +37,27 @@ class Trainer:
         if self.current_iter % self.batch_size == 0:
             self.current_epoch += 1
             
-            train_acc = self.network.accuracy(self.x_train, self.t_train)
+            # 为了减少计算量，只取一部分进行估算正确率
+            if not self.rate_of_datanum_to_acc is None:
+                use_train_num = int(self.rate_of_datanum_to_acc * self.x_train.shape[0])
+                use_test_num = int(self.rate_of_datanum_to_acc * self.x_test.shape[0])
+                
+            train_acc = self.network.accuracy(self.x_train[:use_train_num], self.t_train[:use_train_num])
             self.train_acc_list.append(train_acc)
-            test_acc = self.network.accuracy(self.x_test, self.t_test)
+            test_acc = self.network.accuracy(self.x_test[:use_test_num], self.t_test[:use_test_num])
             self.test_acc_list.append(test_acc)
             
             if self.verbose: print("the", self.current_epoch, "epoch: train acc=", train_acc, "test acc=", test_acc, "="*50)
             
         mask = np.random.choice(self.train_size, self.batch_size)    # 随机生成mini-batch
-        x_train_batch = self.x_train[mask]    
+        x_train_batch = self.x_train[mask]
         t_train_batch = self.t_train[mask]    
         
         grads = self.network.gradient(x_train_batch, t_train_batch) # 计算梯度并更新参数
         self.network.params = self.optimizer.update(self.network.params, grads)
         
         loss = self.network.loss(x_train_batch, t_train_batch)  # 计算损失
-        self.lost_list.append(loss)
+        self.loss_list.append(loss)
         if self.verbose: print("the", self.current_iter, "time: loss=", loss)
         
         self.current_iter += 1
