@@ -74,20 +74,13 @@ def shuffle_dataset(x, t):
     random_index = np.random.permutation(x.shape[0])
     return x[random_index], t[random_index]
 
-def get_mnist_data(use_cnn=False):
+def get_mnist_data():
     """获得mnist数据集"""
     (x_train, t_train), (x_test, t_test) = mnist.load_data()
-    
-    if not use_cnn:
-        x_train = x_train.reshape(-1, 784).astype("float32") / 255
-        x_test = x_test.reshape(-1, 784).astype("float32") / 255
-    else:
-        x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1], x_train.shape[2])
-        x_test = x_test.reshape(x_test.shape[0], 1, x_test.shape[1], x_test.shape[2])
-        
+    x_train = x_train.reshape(-1, 784).astype("float32") / 255
     t_train = np.array(tf.one_hot(t_train, 10))
+    x_test = x_test.reshape(-1, 784).astype("float32") / 255
     t_test = np.array(tf.one_hot(t_test, 10))
-    
     return x_train, t_train, x_test, t_test
 
 def divide_validation_data(x, t, validation_rate):
@@ -99,7 +92,6 @@ def divide_validation_data(x, t, validation_rate):
     t_val = t[:validation_num]
     x_train = x[validation_num:]
     t_train = t[validation_num:]
-    
     return x_val, t_val, x_train, t_train
 
 def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
@@ -133,21 +125,6 @@ def im2col(input_data, filter_h, filter_w, stride=1, pad=0):
     col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N*out_h*out_w, -1)
     return col
     
-def col2im(col, input_shape, filter_h, filter_w, stride=1, pad=0):
-    """im2col的逆运算"""
-    N, C, H, W = input_shape
-    out_h = (H + 2*pad - filter_h)//stride + 1
-    out_w = (W + 2*pad - filter_w)//stride + 1
-    col = col.reshape(N, out_h, out_w, C, filter_h, filter_w).transpose(0, 3, 4, 5, 1, 2)
-
-    img = np.zeros((N, C, H + 2*pad + stride - 1, W + 2*pad + stride - 1))
-    for y in range(filter_h):
-        y_max = y + stride*out_h
-        for x in range(filter_w):
-            x_max = x + stride*out_w
-            img[:, :, y:y_max:stride, x:x_max:stride] += col[:, :, y, x, :, :]
-
-    return img[:, :, pad:H + pad, pad:W + pad]
 
 #  optimizer_calss: 更新参数的类（方式）
 class SGD:
@@ -202,36 +179,3 @@ class AdaGrad:
         return params
             
     
-class Adam:
-    """融合了Momentum和AdaGrad的方法(http://arxiv.org/abs/1412.6980v8)"""
-
-    def __init__(self, lr=0.001, beta1=0.9, beta2=0.999):
-        self.lr = lr
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.iter = 0
-        self.m = None
-        self.v = None
-        
-    def update(self, params, grads):
-        if self.m is None:
-            self.m, self.v = {}, {}
-            for key, val in params.items():
-                self.m[key] = np.zeros_like(val)
-                self.v[key] = np.zeros_like(val)
-        
-        self.iter += 1
-        lr_t  = self.lr * np.sqrt(1.0 - self.beta2**self.iter) / (1.0 - self.beta1**self.iter)         
-        
-        for key in params.keys():
-            #self.m[key] = self.beta1*self.m[key] + (1-self.beta1)*grads[key]
-            #self.v[key] = self.beta2*self.v[key] + (1-self.beta2)*(grads[key]**2)
-            self.m[key] += (1 - self.beta1) * (grads[key] - self.m[key])
-            self.v[key] += (1 - self.beta2) * (grads[key]**2 - self.v[key])
-            
-            params[key] -= lr_t * self.m[key] / (np.sqrt(self.v[key]) + 1e-7)
-            
-            #unbias_m += (1 - self.beta1) * (grads[key] - self.m[key]) # correct bias
-            #unbisa_b += (1 - self.beta2) * (grads[key]*grads[key] - self.v[key]) # correct bias
-            #params[key] += self.lr * unbias_m / (np.sqrt(unbisa_b) + 1e-7)
-        return params
