@@ -1,4 +1,5 @@
 # 简单的CNN网络实现
+import pickle
 from common import *
 from layers import *
 import numpy as np
@@ -85,7 +86,22 @@ class SimpleConvNet:
         
         return grads
         
-        
+    def save_params(self, file_name="simple_cnn_params_of_mnist.pkl"):
+        """保存训练好的参数"""
+        params = {}
+        for key, val in self.params.items():
+            params[key] = val
+        with open(file_name, "wb") as f:
+            pickle.dump(params, f)
 
-        
-        
+    def load_params(self, file_name="simple_cnn_params_of_mnist.pkl"):
+        """读取训练好的参数"""
+        with open(file_name, "rb") as f:
+            params = pickle.load(f)
+            
+        for key, val in params.items():
+            self.params[key] = val
+            
+        for i, val in enumerate(['Conv1', 'Affine1', 'Affine2']):
+            self.layers[val].W = self.params['W'+str(i+1)]
+            self.layers[val].b = self.params['b'+str(i+1)]

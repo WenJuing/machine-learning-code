@@ -8,11 +8,13 @@ from keras.datasets import mnist
 from common import *
 
 
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-print(x_train.shape)
-print(x_train[:3])
-x_train = x_train.reshape(60000, 1, 28, 28)
-print(x_train.shape)
-print(x_train[:3])
-# x_train = x_train.reshape(-1, 784).astype('float32') / 255  # 样本一维化和归一化
-# t_train = np.array(tf.one_hot(y_train, 10))
+# (x_train, y_train), (x_test, y_test) = mnist.load_data()
+A = np.array([[1/3, -1/(3*np.sqrt(2)), -1j/np.sqrt(6)],
+              [-1/(3*np.sqrt(2)), 1/6, 1j/(2*np.sqrt(3))],
+              [1j/np.sqrt(6), -1j/(2*np.sqrt(3)), 1/2]])
+
+_A = A.T.conjugate()
+print(A,"\n")
+print(_A,"\n")
+print(np.dot(A, _A),"\n")
+print(np.dot(_A, A))
