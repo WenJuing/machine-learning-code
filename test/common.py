@@ -177,5 +177,21 @@ class AdaGrad:
             params[key] -= self.lr * grads[key] / (np.sqrt(self.h[key]) + 1e-7)   # 分母一般加个微小值
             
         return params
-            
+
+
+def get_mnist_data(use_cnn=False):
+    """获得mnist数据集"""
+    (x_train, t_train), (x_test, t_test) = mnist.load_data()
+    
+    if not use_cnn:
+        x_train = x_train.reshape(-1, 784).astype("float32") / 255
+        x_test = x_test.reshape(-1, 784).astype("float32") / 255
+    else:
+        x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1], x_train.shape[2])
+        x_test = x_test.reshape(x_test.shape[0], 1, x_test.shape[1], x_test.shape[2])
+        
+    t_train = np.array(tf.one_hot(t_train, 10))
+    t_test = np.array(tf.one_hot(t_test, 10))
+    
+    return x_train, t_train, x_test, t_test
     

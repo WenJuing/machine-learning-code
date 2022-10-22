@@ -35,6 +35,7 @@ class DeepConvNet:
             self.params['W' + str(idx+1)] = wight_init_scales[idx] * np.random.randn(conv_param['filter_num'], pre_channel_num, conv_param['filter_size'], conv_param['filter_size'])
             self.params['b' + str(idx+1)] = np.zeros(conv_param['filter_num'])
             pre_channel_num = conv_param['filter_num']
+            
         self.params['W7'] = wight_init_scales[6] * np.random.randn(64*4*4, hidden_size)
         self.params['b7'] = np.zeros(hidden_size)
         self.params['W8'] = wight_init_scales[7] * np.random.randn(hidden_size, output_size)
@@ -42,7 +43,7 @@ class DeepConvNet:
 
         # 生成层===========
         self.layers = []
-        self.layers.append(Convolution(self.params['W1'], self.params['b1'], 
+        self.layers.append(Convolution(self.params['W1'], self.params['b1'],
                            conv_param_1['stride'], conv_param_1['pad']))
         self.layers.append(Relu())
         self.layers.append(Convolution(self.params['W2'], self.params['b2'], 
@@ -78,7 +79,7 @@ class DeepConvNet:
             else:
                 x = layer.forward(x)
         return x
-
+    
     def loss(self, x, t):
         y = self.predict(x, train_flg=True)
         return self.last_layer.forward(y, t)

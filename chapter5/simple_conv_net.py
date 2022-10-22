@@ -1,7 +1,7 @@
 # 简单的CNN网络实现
 import pickle
 from common import *
-from layers import *
+from layer import *
 import numpy as np
 from collections import OrderedDict
 
