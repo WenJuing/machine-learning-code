@@ -1,9 +1,9 @@
 # coding: utf-8
-from common import *
 import numpy as np
 import matplotlib.pyplot as plt
 from deep_convnet import DeepConvNet
 from trainer import Trainer
+from common import *
 
 x_train, t_train, x_test, t_test = get_mnist_data(use_cnn=True)
 

@@ -1,4 +1,5 @@
 # 训练神经网络类
+from time import time
 import numpy as np
 from common import *
 
@@ -6,7 +7,7 @@ from common import *
 class Trainer:
     """训练神经网络类"""
     def __init__(self, network, x_train, t_train, x_test, t_test, epoch=10, batch_size=100, 
-                 optimizer='SGD', optimizer_param={'lr': 0.01}, rate_of_datanum_to_acc=None, verbose=True):
+                 optimizer='SGD', optimizer_param={'lr': 0.01}, datanum_to_acc=None, verbose=True):
         self.network = network
         self.x_train = x_train
         self.t_train = t_train
@@ -14,7 +15,7 @@ class Trainer:
         self.t_test = t_test
         self.epoch = epoch
         self.batch_size = batch_size
-        self.rate_of_datanum_to_acc = rate_of_datanum_to_acc
+        self.datanum_to_acc = datanum_to_acc
         self.verbose = verbose
         
         self.train_size = x_train.shape[0]
@@ -33,18 +34,23 @@ class Trainer:
         
     def train_step(self):
         """训练一次"""
+        start = time()
         # 达到一个epoch时，计算并输出一次mini-btach和测试集的正确率
         if self.current_iter % self.batch_size == 0:
             self.current_epoch += 1
             
             # 为了减少计算量，只取一部分进行估算正确率
-            if not self.rate_of_datanum_to_acc is None:
-                use_train_num = int(self.rate_of_datanum_to_acc * self.x_train.shape[0])
-                use_test_num = int(self.rate_of_datanum_to_acc * self.x_test.shape[0])
+            if not self.datanum_to_acc is None:
+                train_mask = np.random.choice(self.x_train.shape[0], self.datanum_to_acc)
+                test_mask = np.random.choice(self.x_test.shape[0], self.datanum_to_acc)
+            else:
+                train_mask = np.arange(self.x_train.shape[0])
+                test_mask = np.arange(self.x_test.shape[0])
                 
-            train_acc = self.network.accuracy(self.x_train[:use_train_num], self.t_train[:use_train_num])
+                
+            train_acc = self.network.accuracy(self.x_train[train_mask], self.t_train[train_mask])
             self.train_acc_list.append(train_acc)
-            test_acc = self.network.accuracy(self.x_test[:use_test_num], self.t_test[:use_test_num])
+            test_acc = self.network.accuracy(self.x_test[test_mask], self.t_test[test_mask])
             self.test_acc_list.append(test_acc)
             
             if self.verbose: print("the", self.current_epoch, "epoch: train acc=", train_acc, "test acc=", test_acc, "="*50)
@@ -58,6 +64,7 @@ class Trainer:
         
         loss = self.network.loss(x_train_batch, t_train_batch)  # 计算损失
         self.loss_list.append(loss)
+        end = time()
         if self.verbose: print("the", self.current_iter, "time: loss=", loss)
         
         self.current_iter += 1

@@ -46,9 +46,9 @@ class Trainer:
         
         loss = self.network.loss(x_batch, t_batch)
         self.train_loss_list.append(loss)
-        if self.verbose: print("train loss:" + str(loss))
+        if self.verbose: print("current iter:", self.current_iter, " train loss:" + str(loss))
         
-        if self.current_iter % self.iter_per_epoch == 0:
+        if self.current_iter % self.batch_size == 0:
             self.current_epoch += 1
             
             x_train_sample, t_train_sample = self.x_train, self.t_train

@@ -1,8 +1,10 @@
 # coding: utf-8
+import sys, os
+sys.path.append(os.pardir)  # 为了导入父目录的文件而进行的设定
 import pickle
 import numpy as np
 from collections import OrderedDict
-from layers import *
+from layer import *
 
 
 class DeepConvNet:
@@ -33,6 +35,7 @@ class DeepConvNet:
             self.params['W' + str(idx+1)] = wight_init_scales[idx] * np.random.randn(conv_param['filter_num'], pre_channel_num, conv_param['filter_size'], conv_param['filter_size'])
             self.params['b' + str(idx+1)] = np.zeros(conv_param['filter_num'])
             pre_channel_num = conv_param['filter_num']
+            
         self.params['W7'] = wight_init_scales[6] * np.random.randn(64*4*4, hidden_size)
         self.params['b7'] = np.zeros(hidden_size)
         self.params['W8'] = wight_init_scales[7] * np.random.randn(hidden_size, output_size)
@@ -40,7 +43,7 @@ class DeepConvNet:
 
         # 生成层===========
         self.layers = []
-        self.layers.append(Convolution(self.params['W1'], self.params['b1'], 
+        self.layers.append(Convolution(self.params['W1'], self.params['b1'],
                            conv_param_1['stride'], conv_param_1['pad']))
         self.layers.append(Relu())
         self.layers.append(Convolution(self.params['W2'], self.params['b2'], 
@@ -76,7 +79,7 @@ class DeepConvNet:
             else:
                 x = layer.forward(x)
         return x
-
+    
     def loss(self, x, t):
         y = self.predict(x, train_flg=True)
         return self.last_layer.forward(y, t)
@@ -113,7 +116,7 @@ class DeepConvNet:
         for i, layer_idx in enumerate((0, 2, 5, 7, 10, 12, 15, 18)):
             grads['W' + str(i+1)] = self.layers[layer_idx].dW
             grads['b' + str(i+1)] = self.layers[layer_idx].db
-        print('dW1:', np.sum(grads['W1']))
+
         return grads
 
     def save_params(self, file_name="params.pkl"):

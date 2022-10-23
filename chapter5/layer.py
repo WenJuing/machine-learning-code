@@ -212,7 +212,7 @@ class Dropout:
         self.dropout_ratio = dropout_ratio
         self.mask = None
 
-    def forward(self, x, train_flg=True):
+    def forward(self, x, train_flg=True):   # train_flag：是否为训练模式
         if train_flg:
             self.mask = np.random.rand(*x.shape) > self.dropout_ratio
             return x * self.mask
