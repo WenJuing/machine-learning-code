@@ -224,6 +224,7 @@ class Dropout:
     
 
 class Convolution:
+    """卷积层"""
     def __init__(self, W, b, stride=1, pad=0):
         self.W = W
         self.b = b
