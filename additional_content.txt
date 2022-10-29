@@ -1,0 +1,2 @@
+matplotlib.pyplot无法正常显示负号，添加下行代码：
+plt.rcParams['axes.unicode_minus']=False

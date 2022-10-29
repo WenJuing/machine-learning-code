@@ -38,7 +38,8 @@ class DeepConvNet:
     def _init_weights(self):
         """初始化权重"""
         for i, conv_param in enumerate(self.conv_params):   # Conv参数
-            self.params['W'+str(i+1)] = self.weight_init_scales[i] * np.random.randn(conv_param['filter_num'], self.pre_channel_num, conv_param['filter_size'], conv_param['filter_size'])
+            self.params['W'+str(i+1)] = self.weight_init_scales[i] * \
+            np.random.randn(conv_param['filter_num'], self.pre_channel_num, conv_param['filter_size'], conv_param['filter_size'])
             self.params['b'+str(i+1)] = np.zeros(conv_param['filter_num'])
             self.pre_channel_num = conv_param['filter_num']
         # Affine、BatchNorm参数
