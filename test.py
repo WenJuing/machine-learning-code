@@ -1,9 +1,8 @@
 import numpy as np
+from sklearn.model_selection import train_test_split
+import os
+import shutil
 
-a = []
-b = np.array([1,2])
-a.append(b)
-a.append(b)
-a.append(b)
-print(np.array(a))
-print(a)
+
+shutil.rmtree("./testdir")
+os.mkdir("./testdir")
