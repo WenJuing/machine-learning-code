@@ -18,7 +18,7 @@ def get_FashionMNIST_loader(use_train=True):
     # train  (60000,1,28,28)   x:(28,28)
     # test   (10000,1,28,28)   t:0~9
     data = FashionMNIST('./data/FashionMNIST', train=use_train, transform=transforms.ToTensor(), download=True)
-    data_loader = Data.DataLoader(dataset=data, batch_size=256, shuffle=False, num_workers=2)
+    data_loader = Data.DataLoader(dataset=data, batch_size=64, shuffle=False, num_workers=2)
     
     return data_loader
 
@@ -148,7 +148,7 @@ def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs
         #     best_model_wts = copy.deepcopy(model.state_dict())
             
     writer.close()
-    model.load_state_dict(best_model_wts)
+    # model.load_state_dict(best_model_wts)
     
     return model
         

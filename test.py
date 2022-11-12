@@ -4,8 +4,7 @@ import os
 import shutil
 import time
 
-start = time.time()
-for i in range(100):
-    print("*")
-end = time.time()
-print(end-start)
+R = np.arange(6).reshape(2,3)
+c = np.array([1,2,3])
+print(np.matmul(R,c))
+print(np.matmul(c,R))
