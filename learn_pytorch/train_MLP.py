@@ -18,7 +18,7 @@ writer = SummaryWriter(log_dir="./data/train_BiMLP_log") # 提供创建event fil
 
 if __name__ == '__main__':
     iter = 0
-    all_epoch = 15
+    all_epoch = 10
     for epoch in range(all_epoch):
         for step, (train_x, train_y) in enumerate(train_data_loader):
             y = mlp(train_x)
@@ -38,4 +38,4 @@ if __name__ == '__main__':
                 writer.add_scalar("Loss and Accuracy/test accuracy", test_accuracy, iter)
                 
     writer.close()
-                
+    torch.save(mlp, './data/model_and_params/MLP.pkl')

@@ -3,7 +3,7 @@ import torch.utils.data as Data
 from torch.utils.tensorboard import SummaryWriter
 import torchvision.transforms as transforms
 from torchvision.datasets import FashionMNIST, MNIST
-from sklearn.datasets import load_diabetes, load_boston
+from sklearn.datasets import load_diabetes, load_boston, fetch_california_housing
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import copy
 import time
+import seaborn as sns
 
 # 分类数据
 def get_FashionMNIST_loader(use_train=True):
@@ -87,6 +88,28 @@ def get_boston_loader():
     
     return data_loader
 
+
+def get_california_loader():
+    housedata = fetch_california_housing()
+    # X_train.shape: (14448, 8)
+    X_train, X_test, y_train, y_test = train_test_split(housedata.data, housedata.target, test_size=0.3, random_state=100)
+    scale = StandardScaler()
+    X_train = scale.fit_transform(X_train)
+    X_test = scale.transform(X_test)
+    # 查看相关系数热力图
+    # df = pd.DataFrame(data=X_train, columns=housedata.feature_names)
+    # df['target'] = y_train
+    # show_corrcoef(df)
+    X_train = torch.as_tensor(X_train).float()
+    y_train = torch.as_tensor(y_train).float()
+    X_test = torch.as_tensor(X_test).float()
+    y_test = torch.as_tensor(y_test).float()
+    
+    train_data = Data.TensorDataset(X_train, y_train)
+    data_loader = Data.DataLoader(dataset=train_data, batch_size=128, shuffle=True, num_workers=1)
+    
+    return data_loader, X_test, y_test
+    
 def show_data(data_loader):
     for batch_x, batch_y in data_loader:
         break
@@ -101,6 +124,18 @@ def show_data(data_loader):
         plt.subplots_adjust(hspace=0.05,wspace=0.05)
     plt.show()
 
+def show_corrcoef(df):
+    """绘制相关系数(correlation coefficient)热力图"""
+    datacor = np.corrcoef(df.values, rowvar=0)  # rowvar默认为True，即每一行为一个变量（观测值），这里每一列为一个变量
+    datacor = pd.DataFrame(data=datacor, columns=df.columns, index=df.columns)
+    
+    plt.figure(figsize=(8, 6))
+    plt.rcParams['axes.unicode_minus']=False    # 正常显示负号
+    ax = sns.heatmap(datacor, square=True, annot=True, fmt=".3f", linewidths=.5, cmap="YlGnBu", 
+                     cbar_kws={"fraction":0.05, "pad": 0.05})
+    plt.title("相关系数热力图")
+    plt.show()
+    
 def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs):
     train_batch_num = np.round(len(data_loader) * train_rate)
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -156,8 +191,9 @@ def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs
 if __name__ == '__main__':
     # data_loader = get_boston_loader()
     # data_loader, test_x, test_y = get_MNIST_loader()
-    data_loader = get_FashionMNIST_loader()
-    show_data(data_loader)
+    # data_loader = get_FashionMNIST_loader()
+    # show_data(data_loader)
     # data = get_spambase()
+    get_california_loader()
 
     

@@ -57,10 +57,11 @@ def k_means_by_L1(data):
 
     return c1, c2
 
-data = np.array([[3,4],[3,6],[7,3],[4,7],[3,8],[8,5]])
-c1, c2 = k_means_by_L2(data)
+data = np.array([[3,4],[3,6],[7,3],[4,7],[3,8],[8,5],[3,5],[7,3],[1,6],[7,1],[6,2],[9,3]])
+c1, c2 = k_means_by_L1(data)
 print(c1,'\n',c2)
 
 plt.scatter(c1[:,0], c1[:,1])
 plt.scatter(c2[:,0], c2[:,1])
+plt.title("基于欧式距离的K-maens聚类")
 plt.show()
