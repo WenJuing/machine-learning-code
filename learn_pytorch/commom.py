@@ -26,15 +26,15 @@ def get_FashionMNIST_loader(use_train=True):
 def get_MNIST_loader():
     # train  (60000,1,28,28)   x:(28,28)
     # test   (10000,1,28,28)   t:0~9
-    train_data = MNIST('./data/MNIST', train=True, transform=transforms.ToTensor(), download=False)
+    train_data = MNIST('./data/MNIST', train=True, transform=transforms.ToTensor(), download=True)
     data_loader = Data.DataLoader(dataset=train_data, batch_size=128, shuffle=True, num_workers=1)
     
     test_data = MNIST('./data/MNIST', train=False, transform=transforms.ToTensor(), download=False)
-    test_x = test_data.data.float()
-    test_x = torch.unsqueeze(test_x, dim=1)
-    test_y = test_data.targets
+    X_test = test_data.data.float()  # X_test.shape = [10000, 28, 28]
+    X_test = torch.unsqueeze(X_test, dim=1)     # 添加通道维数，X_test.shape = [10000, 1, 28, 28]
+    y_test = test_data.targets  # y_test.shape = [10000]
     
-    return data_loader, test_x, test_y
+    return data_loader, X_test, y_test
 
 def get_spambase(test_size=0.25):
     # 1 垃圾邮件 1813
@@ -59,31 +59,31 @@ def get_spambase(test_size=0.25):
 
 # 回归数据
 def get_diabetes_loader():
-    # train_x   (442,10)  float64
-    # train_y   (442,)    float64
-    train_x, train_y = load_diabetes(return_X_y=True)
+    # X_train   (442,10)  float64
+    # y_train   (442,)    float64
+    X_train, y_train = load_diabetes(return_X_y=True)
     # 数据标准化处理
     ss = StandardScaler()
-    train_x = ss.fit_transform(train_x)
+    X_train = ss.fit_transform(X_train)
     
-    train_x = torch.as_tensor(train_x).float()
-    train_y = torch.as_tensor(train_y).float()
-    train_data = Data.TensorDataset(train_x, train_y)
+    X_train = torch.as_tensor(X_train).float()
+    y_train = torch.as_tensor(y_train).float()
+    train_data = Data.TensorDataset(X_train, y_train)
     data_loader = Data.DataLoader(dataset=train_data, batch_size=128, shuffle=True, num_workers=1)
     
     return data_loader
 
 def get_boston_loader():
-    # train_x   (506,13)  float64
-    # train_y   (506,)    float64
-    train_x, train_y = load_boston(return_X_y=True)
+    # X_train   (506,13)  float64
+    # y_train   (506,)    float64
+    X_train, y_train = load_boston(return_X_y=True)
     # 数据标准化处理
     ss = StandardScaler()
-    train_x = ss.fit_transform(train_x)
+    X_train = ss.fit_transform(X_train)
     
-    train_x = torch.as_tensor(train_x).float()
-    train_y = torch.as_tensor(train_y).float()
-    train_data = Data.TensorDataset(train_x, train_y)
+    X_train = torch.as_tensor(X_train).float()
+    y_train = torch.as_tensor(y_train).float()
+    train_data = Data.TensorDataset(X_train, y_train)
     data_loader = Data.DataLoader(dataset=train_data, batch_size=128, shuffle=True, num_workers=1)
     
     return data_loader
@@ -190,10 +190,10 @@ def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs
                 
 if __name__ == '__main__':
     # data_loader = get_boston_loader()
-    # data_loader, test_x, test_y = get_MNIST_loader()
+    # data_loader, X_test, y_test = get_MNIST_loader()
     # data_loader = get_FashionMNIST_loader()
     # show_data(data_loader)
     # data = get_spambase()
-    get_california_loader()
-
+    # get_california_loader()
+    get_MNIST_loader()
     

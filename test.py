@@ -4,5 +4,11 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
 
-a = [3,1,5,2]
-print(np.argsort(a))
+a = ['a','b','a','c','b','b']
+res = pd.value_counts(a)
+print(res)
+# b    3
+# a    2
+# c    1
+print(res.index)    # Index(['b', 'a', 'c'], dtype='object')
+print(res.values)   # [3 2 1]
