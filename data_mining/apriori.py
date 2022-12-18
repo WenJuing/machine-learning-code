@@ -80,7 +80,7 @@ def aprioriGen(Lk, k):
                     retList.append(b[0] | b[1])
     return retList
 
-def apriori(dataSet, minSupport=0.2):
+def apriori(dataSet, minSupport=0.02):
 # 前3条语句是对计算查找单个元素中的频繁项集
     C1 = createC1(dataSet)
     D = list(map(set, dataSet))  # 使用list()转换为列表
@@ -107,7 +107,7 @@ def getSubset(fromList, toList):
             if len(tt) > 1:
                 getSubset(tt, toList)
  
-def calcConf(freqSet, H, supportData, ruleList, minConf=0.7):
+def calcConf(freqSet, H, supportData, ruleList, minConf=0.35):
     for conseq in H:  #遍历H中的所有项集并计算它们的可信度值
         conf = supportData[freqSet] / supportData[freqSet - conseq]  # 可信度计算，结合支持度数据
         # 提升度lift计算lift = p(a & b) / p(a)*p(b)

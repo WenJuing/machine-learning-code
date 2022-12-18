@@ -19,11 +19,11 @@ class ConvNet(nn.Module):
             nn.Linear(256, 128),
             nn.ReLU(),
             nn.Linear(128, 10),
-            nn.ReLU(),
         )
         
     def forward(self, x):
         x = self.features(x)
+        # 展平多维的卷积图层
         output = self.classifier(x.view(x.shape[0], -1))
         
         return output

@@ -7,9 +7,25 @@ data = pd.read_csv("./GoodsOrder.csv", encoding="gbk")
 types = pd.read_csv("./GoodsTypes.csv", encoding="gbk")
 
 # 1、描述性统计分析
-# data.info()     # 查看数据属性，id, Goods
-# print(data['id'].describe())    # 查看id属性的相关统计，id:1~9835（一个id对应多个商品）
+data.info()     # 查看数据属性，id, Goods
+print(data['id'].describe())    # 查看id属性的相关统计，id:1~9835（一个id对应多个商品）
 
+# 1.1、缺失值分析
+null_count = data.isnull().sum()
+# print(null_count)
+# 1.2 异常值分析
+a = 0
+b = 0
+for i in data['Goods']:
+    if i in list(types['Goods']):
+        a += 1
+    else:
+        b += 1
+# print(a,b)
+# 43285 0
+# 1.3、重复数据分析
+res = data.duplicated().sum()
+print(res)
 # 2、绘制条形图分析热销商品
 hot_goods = pd.value_counts(data['Goods'])[:10]     # 获取前十热销商品和统计
 hot_goods_rate = np.around(np.array(hot_goods.values) / len(data) * 100, 3) # 计算热销商品占比
@@ -43,10 +59,10 @@ sort_link.to_csv('./percent.csv', index=False, header=True, encoding='gbk')    #
 # 绘制饼图展示每类商品销量占比
 data1 = sort_link['percent']
 labels = sort_link['Types']
-# plt.pie(data1, labels=labels, autopct='%1.2f%%')
-# plt.title("各类别商品销量占比")
-# plt.savefig('./percent.png')
-# plt.show()
+plt.pie(data1, labels=labels, autopct='%1.2f%%')
+plt.title("各类别商品销量占比")
+plt.savefig('./percent.png')
+plt.show()
 
 # 4、计算非酒精饮料内部商品的销量及其占比
 # 先筛选非酒精饮料类别的商品,求百分比,然后输出结果到文件
@@ -60,11 +76,11 @@ sort_link.to_csv('./child_percent.csv', index=False, header=True, encoding='gbk'
 data2 = selected['child_percent']
 labels = selected['Goods']
 explode = (0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.08,0.3,0.1,0.3) # 设置每一块分割出的间隙大小
-# plt.pie(data2,explode=explode,labels=labels,autopct='%1.2f%%', pctdistance=1.1, labeldistance=1.2)
-# plt.title("非酒精饮料内部各商品的销量占比")
-# plt.axis("equal")
-# plt.savefig('./child_persent.png')
-# plt.show()
+plt.pie(data2,explode=explode,labels=labels,autopct='%1.2f%%', pctdistance=1.1, labeldistance=1.2)
+plt.title("非酒精饮料内部各商品的销量占比")
+plt.axis("equal")
+plt.savefig('./child_persent.png')
+plt.show()
 
 # 5、数据预处理
 # 根据id对Goods列合并,并使用“,”将各商品隔开
@@ -78,7 +94,7 @@ data_translation = []
 for i in data_list:
     p = i[0].split(',')
     data_translation.append(p)
-# print("数据转换结果的前5个元素:\n", data_translation[:5])
+print("数据转换结果的前5个元素:\n", data_translation[:5])
 
 # 6、构建关联规则模型
 from apriori import *

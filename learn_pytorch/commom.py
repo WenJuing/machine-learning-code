@@ -15,13 +15,18 @@ import time
 import seaborn as sns
 
 # 分类数据
-def get_FashionMNIST_loader(use_train=True):
+def get_FashionMNIST_loader():
     # train  (60000,1,28,28)   x:(28,28)
     # test   (10000,1,28,28)   t:0~9
-    data = FashionMNIST('./data/FashionMNIST', train=use_train, transform=transforms.ToTensor(), download=True)
-    data_loader = Data.DataLoader(dataset=data, batch_size=64, shuffle=False, num_workers=2)
+    data = FashionMNIST('./data/FashionMNIST', train=True, transform=transforms.ToTensor(), download=True)
+    data_loader = Data.DataLoader(dataset=data, batch_size=128, shuffle=False, num_workers=2)
     
-    return data_loader
+    test_data = FashionMNIST('./data/FashionMNIST', train=False, transform=transforms.ToTensor(), download=True)
+    X_test = test_data.data.float()
+    X_test = torch.unsqueeze(X_test, dim=1)
+    y_test = test_data.targets
+    
+    return data_loader, X_test, y_test
 
 def get_MNIST_loader():
     # train  (60000,1,28,28)   x:(28,28)
@@ -136,55 +141,24 @@ def show_corrcoef(df):
     plt.title("相关系数热力图")
     plt.show()
     
-def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs):
-    train_batch_num = np.round(len(data_loader) * train_rate)
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_val_acc = 0
-    val_acc = 0
+def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs=25):
+    writer = SummaryWriter(log_dir="./data/train_Conv2_log")
     iter = 0
-    
-    writer = SummaryWriter()
-    
     for epoch in range(epochs):
-        # 每个epoch分类训练阶段核评估阶段
-        for step, (x_batch, y_batch) in enumerate(data_loader):
-            start = time.time() 
+        for step, (X_batch, y_batch) in enumerate(data_loader):
+            output = model(X_batch)
+            loss = loss_function(output, y_batch)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
             
-            if step < train_batch_num:
-                model.train()   # 训练模式
-                output = model(x_batch)
-                train_loss = loss_function(output, y_batch)
-                optimizer.zero_grad()
-                train_loss.backward()
-                optimizer.step()
-                
-                pre = torch.argmax(output, 1)
-                train_acc = accuracy_score(y_batch, pre)
-                iter += step
-                writer.add_scalar("Loss/train", train_loss.item(), iter)
-                writer.add_scalar("Accuracy/train", train_acc, iter)
-            else:
-                model.eval()    # 评估模式
-                output = model(x_batch)
-                val_loss = loss_function(output, y_batch)
-                pre = torch.argmax(output, 1)
-                val_acc = accuracy_score(y_batch, pre)
-                iter += step
-                writer.add_scalar("Loss/test", val_loss.item(), iter)
-                writer.add_scalar("Accuracy/test", val_acc, iter)
-            end = time.time()
-            writer.add_scalar("cost time(s)", end-start, iter)
-            print("step:",step+1,"loss=",train_loss,"train acc=",train_acc,"val acc=",val_acc,"cost time=",end-start)
-            
-        print("epoch:",epoch+1,"/",epochs,"loss=",train_loss,"train acc=",train_acc,"val acc=",val_acc)
-        # 每经过一个epoch，判断并选择最大准确率时的模型参数（最优参数）
-        # if val_acc > best_val_acc:
-        #     best_val_acc = val_acc
-        #     best_model_wts = copy.deepcopy(model.state_dict())
-            
-    writer.close()
-    # model.load_state_dict(best_model_wts)
-    
+            pre = torch.argmax(output, 1)
+            acc = accuracy_score(pre, y_batch)
+            writer.add_scalar("train/loss", loss.item(), iter)
+            writer.add_scalar("train/accuracy", acc, iter)
+            print("epoch:",epoch,"loss=",loss.item(),'acc=',acc)
+            iter += step
+
     return model
         
                 
