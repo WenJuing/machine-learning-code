@@ -18,10 +18,10 @@ import seaborn as sns
 def get_FashionMNIST_loader():
     # train  (60000,1,28,28)   x:(28,28)
     # test   (10000,1,28,28)   t:0~9
-    data = FashionMNIST('./data/FashionMNIST', train=True, transform=transforms.ToTensor(), download=True)
+    data = FashionMNIST('./data/FashionMNIST', train=True, transform=transforms.ToTensor(), download=False)
     data_loader = Data.DataLoader(dataset=data, batch_size=128, shuffle=False, num_workers=2)
     
-    test_data = FashionMNIST('./data/FashionMNIST', train=False, transform=transforms.ToTensor(), download=True)
+    test_data = FashionMNIST('./data/FashionMNIST', train=False, transform=transforms.ToTensor(), download=False)
     X_test = test_data.data.float()
     X_test = torch.unsqueeze(X_test, dim=1)
     y_test = test_data.targets
@@ -144,6 +144,7 @@ def show_corrcoef(df):
 def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs=25):
     writer = SummaryWriter(log_dir="./data/train_Conv2_log")
     iter = 0
+    print_iter = 50
     for epoch in range(epochs):
         for step, (X_batch, y_batch) in enumerate(data_loader):
             output = model(X_batch)
@@ -152,12 +153,13 @@ def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs
             loss.backward()
             optimizer.step()
             
-            pre = torch.argmax(output, 1)
-            acc = accuracy_score(pre, y_batch)
-            writer.add_scalar("train/loss", loss.item(), iter)
-            writer.add_scalar("train/accuracy", acc, iter)
-            print("epoch:",epoch,"loss=",loss.item(),'acc=',acc)
-            iter += step
+            if iter % print_iter == 0:
+                pre = torch.argmax(output, 1)
+                acc = accuracy_score(pre, y_batch)
+                writer.add_scalar("train/loss", loss.item(), iter)
+                writer.add_scalar("train/accuracy", acc, iter)
+                print("epoch:",epoch,"loss=",loss.item(),'acc=',acc)
+            iter += 1
 
     return model
         
@@ -165,9 +167,9 @@ def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs
 if __name__ == '__main__':
     # data_loader = get_boston_loader()
     # data_loader, X_test, y_test = get_MNIST_loader()
-    # data_loader = get_FashionMNIST_loader()
-    # show_data(data_loader)
+    data_loader, X_test, y_test = get_FashionMNIST_loader()
+    show_data(data_loader)
     # data = get_spambase()
     # get_california_loader()
-    get_MNIST_loader()
+    # get_MNIST_loader()
     
