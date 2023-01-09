@@ -212,6 +212,7 @@ def show_corrcoef(df):
     plt.title("相关系数热力图")
     plt.show()
     
+<<<<<<< HEAD
 
 def train_model(model, data_loader, loss_function, optimizer, epochs, device, 
                 model_name=None, dataset_name=None, is_rnn=False):
@@ -225,6 +226,12 @@ def train_model(model, data_loader, loss_function, optimizer, epochs, device,
     cur_loss = 0
     cur_acc = 0
     print("model:", model_name, "| dataset:", dataset_name, "| device:", device)
+=======
+def train_model(model, data_loader, train_rate, loss_function, optimizer, epochs=25):
+    writer = SummaryWriter(log_dir="./data/train_Conv2_log")
+    iter = 0
+    print_iter = 50
+>>>>>>> e677a9d53fd49359bfdd51c55f251c332d136658
     for epoch in range(epochs):
         data_loader = tqdm(data_loader)     # 显示进度条
         for _, (images, labels) in enumerate(data_loader):
@@ -237,6 +244,7 @@ def train_model(model, data_loader, loss_function, optimizer, epochs, device,
             pred_classes = torch.argmax(pred, 1)
             accu_num += torch.eq(pred_classes, labels.to(device)).sum()
             
+<<<<<<< HEAD
             loss = loss_function(pred, labels.to(device))
             loss.backward()
             accu_loss += loss.detach()
@@ -248,6 +256,15 @@ def train_model(model, data_loader, loss_function, optimizer, epochs, device,
             
         sw.add_scalar(model_name + "/" + dataset_name + " train/loss", cur_loss, epoch)
         sw.add_scalar(model_name + "/" + dataset_name + " train/accuracy", cur_acc, epoch)
+=======
+            if iter % print_iter == 0:
+                pre = torch.argmax(output, 1)
+                acc = accuracy_score(pre, y_batch)
+                writer.add_scalar("train/loss", loss.item(), iter)
+                writer.add_scalar("train/accuracy", acc, iter)
+                print("epoch:",epoch,"loss=",loss.item(),'acc=',acc)
+            iter += 1
+>>>>>>> e677a9d53fd49359bfdd51c55f251c332d136658
 
     return model
 
@@ -308,6 +325,7 @@ def hook(model, input, output):
 if __name__ == '__main__':
     # data_loader = get_boston_loader()
     # data_loader, X_test, y_test = get_MNIST_loader()
+<<<<<<< HEAD
     # data_loader, X_test, y_test = get_FashionMNIST_loader()
     data_loader = get_flower_loader()
     # for step, (X_batch, y_batch) in enumerate(data_loader):
@@ -316,3 +334,11 @@ if __name__ == '__main__':
     #     print(y_batch.shape)
     #     print(y_batch)
     #     break
+=======
+    data_loader, X_test, y_test = get_FashionMNIST_loader()
+    show_data(data_loader)
+    # data = get_spambase()
+    # get_california_loader()
+    # get_MNIST_loader()
+    
+>>>>>>> e677a9d53fd49359bfdd51c55f251c332d136658
