@@ -100,9 +100,9 @@ def viewport_generation(im, beta, a, FOV):  # 0 <= beta <= 2pi, -pi <= a <= pi
 
 
 if __name__ == '__main__':
-    vr_img = plt.imread('./image/vr3.png')
+    vr_img = plt.imread('./data/vr.jpg')
     start = time.time()
-    flat_img = viewport_generation(vr_img, pi, -0.5*pi, FOV=0.25 * pi)
+    flat_img = viewport_generation(vr_img, pi, 0, FOV=0.25 * pi)
     end =time.time()
     print("cost time:", end-start)
     

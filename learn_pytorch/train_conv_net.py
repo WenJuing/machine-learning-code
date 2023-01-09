@@ -20,7 +20,7 @@ test_acc_list = []
 
 if __name__ == '__main__':
     i = 0
-    epoch = 4
+    epoch = 10
     all_step = epoch * 60000.0
     for epoch in range(epoch):
         for step, (train_x, train_y) in enumerate(data_loader):

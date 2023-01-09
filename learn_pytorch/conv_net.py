@@ -2,7 +2,7 @@
 import torch.nn as nn
 
 class ConvNet(nn.Module):
-    def __init__(self, img_size=28):
+    def __init__(self, img_size=28, in_channel=1):
         super(ConvNet, self).__init__()
         k_size = 3     # 滤波器大小
         p_size = 2     # 池化大小
@@ -10,7 +10,7 @@ class ConvNet(nn.Module):
         p = 1          # 填充
         img_size = img_size  # 图像大小
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=k_size, stride=s, padding=p),
+            nn.Conv2d(in_channels=in_channel, out_channels=16, kernel_size=k_size, stride=s, padding=p),
             nn.ReLU(),
             nn.AvgPool2d(p_size, p_size),
             nn.Conv2d(16, 32, k_size, s, p),
