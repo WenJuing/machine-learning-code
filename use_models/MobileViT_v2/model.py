@@ -3,34 +3,41 @@ original code from apple:
 https://github.com/apple/ml-cvnets/blob/main/cvnets/models/classification/mobilevit_v2.py
 """
 
-from torch import nn
-import argparse
-from typing import Dict, Tuple, Optional
-
-from . import register_cls_models
-from .base_cls import BaseEncoder
-from model_config import get_configuration
-from ...layers import ConvLayer, LinearLayer, GlobalPool, Identity
-from ...modules import InvertedResidual
-from ...modules import MobileViTBlockv2 as Block
+from torch import nn, Tensor
+from typing import Dict, Tuple, Optional, Any
+from model_config import get_config
+from layers import ConvLayer, LinearLayer, GlobalPool, Identity
+from modules import InvertedResidual
+from modules import MobileViTBlockv2 as Block
+from init_utils import initialize_weights
+from torch.utils.checkpoint import checkpoint as gradient_checkpoint_fn
 
 
-@register_cls_models("mobilevit_v2")
+# @register_cls_models("mobilevit_v2")
 class MobileViTv2(nn.Module):
     """
     This class defines the `MobileViTv2 <https://arxiv.org/abs/2206.02680>`_ architecture
     """
 
     def __init__(self, opts, *args, **kwargs) -> None:
-        num_classes = getattr(opts, "model.classification.n_classes", 1000)
+        super().__init__()
+        num_classes = getattr(opts, "num_classes", 1000)
         pool_type = getattr(opts, "model.layer.global_pool", "mean")
 
-        mobilevit_config = get_configuration(opts=opts)
+        mobilevit_config = get_config(opts=opts)
         image_channels = mobilevit_config["layer0"]["img_channels"]
         out_channels = mobilevit_config["layer0"]["out_channels"]
 
-        super().__init__(opts, *args, **kwargs)
-
+        self.dilation = 1
+        output_stride = kwargs.get("output_stride", None)
+        self.dilate_l4 = False
+        self.dilate_l5 = False
+        if output_stride == 8:
+            self.dilate_l4 = True
+            self.dilate_l5 = True
+        elif output_stride == 16:
+            self.dilate_l5 = True
+        
         # store model configuration in a dictionary
         self.model_conf_dict = dict()
         self.conv_1 = ConvLayer(
@@ -91,49 +98,12 @@ class MobileViTv2(nn.Module):
             GlobalPool(pool_type=pool_type, keep_dim=False),
             LinearLayer(in_features=out_channels, out_features=num_classes, bias=True),
         )
-
+        
         # check model
         self.check_model()
 
         # weight initialization
         self.reset_parameters(opts=opts)
-
-    @classmethod
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-        group = parser.add_argument_group(
-            title="".format(cls.__name__), description="".format(cls.__name__)
-        )
-        group.add_argument(
-            "--model.classification.mitv2.attn-dropout",
-            type=float,
-            default=0.0,
-            help="Dropout in attention layer. Defaults to 0.0",
-        )
-        group.add_argument(
-            "--model.classification.mitv2.ffn-dropout",
-            type=float,
-            default=0.0,
-            help="Dropout between FFN layers. Defaults to 0.0",
-        )
-        group.add_argument(
-            "--model.classification.mitv2.dropout",
-            type=float,
-            default=0.0,
-            help="Dropout in attention layer. Defaults to 0.0",
-        )
-        group.add_argument(
-            "--model.classification.mitv2.width-multiplier",
-            type=float,
-            default=1.0,
-            help="Width multiplier. Defaults to 1.0",
-        )
-        group.add_argument(
-            "--model.classification.mitv2.attn-norm-layer",
-            type=str,
-            default="layer_norm_2d",
-            help="Norm layer in attention block. Defaults to LayerNorm",
-        )
-        return parser
 
     def _make_layer(
         self, opts, input_channel, cfg: Dict, dilate: Optional[bool] = False
@@ -225,3 +195,54 @@ class MobileViTv2(nn.Module):
         )
 
         return nn.Sequential(*block), input_channel
+    
+    def check_model(self):
+        assert (
+            self.model_conf_dict
+        ), "Model configuration dictionary should not be empty"
+        assert self.conv_1 is not None, "Please implement self.conv_1"
+        assert self.layer_1 is not None, "Please implement self.layer_1"
+        assert self.layer_2 is not None, "Please implement self.layer_2"
+        assert self.layer_3 is not None, "Please implement self.layer_3"
+        assert self.layer_4 is not None, "Please implement self.layer_4"
+        assert self.layer_5 is not None, "Please implement self.layer_5"
+        assert self.conv_1x1_exp is not None, "Please implement self.conv_1x1_exp"
+        assert self.classifier is not None, "Please implement self.classifier"
+
+    def reset_parameters(self, opts):
+        """Initialize model weights"""
+        initialize_weights(opts=opts, modules=self.modules())
+
+    def _forward_layer(self, layer: nn.Module, x: Tensor) -> Tensor:
+        # Larger models with large input image size may not be able to fit into memory.
+        # We can use gradient checkpointing to enable training with large models and large inputs
+        return layer(x)
+        
+    def _extract_features(self, x: Tensor, *args, **kwargs) -> Tensor:
+        x = self._forward_layer(self.conv_1, x)
+        x = self._forward_layer(self.layer_1, x)
+        x = self._forward_layer(self.layer_2, x)
+        x = self._forward_layer(self.layer_3, x)
+
+        x = self._forward_layer(self.layer_4, x)
+        x = self._forward_layer(self.layer_5, x)
+        x = self._forward_layer(self.conv_1x1_exp, x)
+        return x
+    
+    def _forward_classifier(self, x: Tensor, *args, **kwargs) -> Tensor:
+        # We add another classifier function so that the classifiers
+        # that do not adhere to the structure of BaseEncoder can still
+        # use neural augmentor
+        x = self._extract_features(x)
+        x = self.classifier(x)
+        return x
+
+    def forward(self, x: Any, *args, **kwargs) -> Any:
+        x = self._forward_classifier(x, *args, **kwargs)
+        return x
+        
+def mobile_vit_v2(opts):
+    # pretrain weight link
+    # https://docs-assets.developer.apple.com/ml-research/models/cvnets/classification/mobilevit_xxs.pt
+    m = MobileViTv2(opts)
+    return m

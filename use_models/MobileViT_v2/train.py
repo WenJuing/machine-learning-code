@@ -7,18 +7,17 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-# from model import mobile_vit_xx_small as create_model
-from model import mobile_vit_small as create_model
+from model import mobile_vit_v2 as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("D:/weights/"+args.model_name) is False:
+        os.makedirs("D:/weights/"+args.model_name)
 
-    tb_writer = SummaryWriter(log_dir="./runs/train_MobileViT_S")
+    writer = SummaryWriter(log_dir="./runs/train_" + args.model_name)
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
@@ -60,7 +59,7 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model(num_classes=args.num_classes).to(device)
+    model = create_model(args).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
@@ -99,34 +98,39 @@ def main(args):
                                      epoch=epoch)
 
         # tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-        tb_writer.add_scalar("MobileViT-S train/loss", train_loss, epoch)
-        tb_writer.add_scalar("MobileViT-S train/acc", train_acc, epoch)
-        tb_writer.add_scalar("MobileViT-S val/loss", val_loss, epoch)
-        tb_writer.add_scalar("MobileViT-S val/acc", val_acc, epoch)
-        # tb_writer.add_scalar("MobileViT learning_rate", optimizer.param_groups[0]["lr"], epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" train/loss", train_loss, epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" train/acc", train_acc, epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" val/loss", val_loss, epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" val/acc", val_acc, epoch)
+        # writer.add_scalar("MobileViT learning_rate", optimizer.param_groups[0]["lr"], epoch)
 
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), "./weights/MobileViT/best_model.pth")
+            torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/best_model.pth")
 
-        torch.save(model.state_dict(), "./weights/MobileViT/latest_model.pth")
+        torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/latest_model.pth")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--model_name', type=str, default="mobileViTv2_2.0")
+    parser.add_argument('--data_name', type=str, default="flower")
+    
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.0002)
+    
+    parser.add_argument('--width_multiplier', type=float, default=2.0, 
+                        help='control model size, range is [0.5, 2.0]')
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
-    parser.add_argument('--data-path', type=str,
-                        default="./data/flower_photos")
+    parser.add_argument('--data-path', type=str, default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./data/weights/mobilevit_s.pt',
-                        help='initial weights path')
+    parser.add_argument('--weights', type=str, default='')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

@@ -3,17 +3,14 @@
 # Copyright (C) 2022 Apple Inc. All Rights Reserved.
 #
 
-import math
-from typing import Dict, Sequence
-
-from utils import logger
+from typing import Dict
 from utils import make_divisible, bound_fn
 
 
-def get_configuration(opts) -> Dict:
-
-    width_multiplier = getattr(opts, "model.classification.mitv2.width_multiplier", 1.0)
-
+def get_config(opts) -> Dict:
+    # the range of width multiplier is [0.5, 2.0]
+    width_multiplier = getattr(opts, "width_multiplier", 1.0)
+    
     ffn_multiplier = (
         2  # bound_fn(min_val=2.0, max_val=4.0, value=2.0 * width_multiplier)
     )
