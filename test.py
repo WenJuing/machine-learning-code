@@ -10,22 +10,11 @@ from tqdm import tqdm
 import time
 import torchvision.models as models
 import argparse
+from torch.utils.tensorboard import SummaryWriter
 
 
-def main(args):
-    print(args.name)	# leimu
-    print(getattr(args, 'age', 999))		# 16
-    print(args.height)	# 160.5
-
-
-if __name__ == '__main__':
-    # 创建解析器
-    parse = argparse.ArgumentParser(description='people')
-    # 添加参数
-    parse.add_argument('--name', type=str, default='leimu')
-    # parse.add_argument('--age', type=int, default=16)
-    parse.add_argument('--height', type=float, default=160.5)
-    # 解析参数
-    args = parse.parse_args()
-
-    main(args)
+writer = SummaryWriter(log_dir="./runs/example")
+for i in range(10):
+    writer.add_scalars('model/dataset Accuracy', {'train': i**2, 'test': np.sqrt(i)}, i)
+    writer.add_scalars('model/dataset Loss', {'train': 1/(i+1), 'test': 1/(i+2)}, i)
+    writer.add_scalar('model/dataset Learning rate', np.exp(np.cos(i)), i)

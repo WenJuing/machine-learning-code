@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 from typing import Optional, Dict, Tuple, Union, Sequence
 
     
-def read_split_data(root: str, val_rate: float = 0.2):
-    random.seed(0)  # 保证随机结果可复现
+def read_split_data(root: str, val_rate: float = 0.2, plot_image = False):
+    random.seed(100)  # 保证随机结果可复现
     assert os.path.exists(root), "dataset root: {} does not exist.".format(root)
 
     # 遍历文件夹，一个文件夹对应一个类别
@@ -62,7 +62,6 @@ def read_split_data(root: str, val_rate: float = 0.2):
     assert len(train_images_path) > 0, "number of training images must greater than 0."
     assert len(val_images_path) > 0, "number of validation images must greater than 0."
 
-    plot_image = False
     if plot_image:
         # 绘制每种类别个数柱状图
         plt.bar(range(len(flower_class)), every_class_num, align='center')
