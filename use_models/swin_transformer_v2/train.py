@@ -1,8 +1,10 @@
 import os
 import argparse
+import math
 
 import torch
 import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
@@ -14,10 +16,10 @@ from utils import read_split_data, train_one_epoch, evaluate
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("D:/weights/"+args.model_name) is False:
+        os.makedirs("D:/weights/"+args.model_name)
 
-    tb_writer = SummaryWriter(log_dir="./runs/train_SwinV2-T")
+    writer = SummaryWriter(log_dir="./runs/train_" + args.model_name)
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
@@ -81,7 +83,10 @@ def main(args):
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=1E-2)
-
+    # Scheduler https://arxiv.org/pdf/1812.01187.pdf
+    lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    
     best_acc = 0.
     for epoch in range(args.epochs):
         # train
@@ -91,32 +96,36 @@ def main(args):
                                                 device=device,
                                                 epoch=epoch)
 
+        scheduler.step()
         # validate
         val_loss, val_acc = evaluate(model=model,
                                      data_loader=val_loader,
                                      device=device,
                                      epoch=epoch)
 
-        # tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-        tb_writer.add_scalar("SwinV2 train/loss", train_loss, epoch)
-        tb_writer.add_scalar("SwinV2 train/acc", train_acc, epoch)
-        tb_writer.add_scalar("SwinV2 val/loss", val_loss, epoch)
-        tb_writer.add_scalar("SwinV2 val/acc", val_acc, epoch)
-        # tb_writer.add_scalar("MobileViT learning_rate", optimizer.param_groups[0]["lr"], epoch)
+        writer.add_scalars(args.model_name+"/"+args.data_name+" Loss", {'train': train_loss, 'val': val_loss}, epoch)
+        writer.add_scalars(args.model_name+"/"+args.data_name+" Accuracy", {'train': train_acc, 'val': val_acc}, epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" learning_rate", optimizer.param_groups[0]["lr"], epoch)
 
+        best_acc = 0.
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), "./weights/swin_transformer_v2/SwinV2_T_best_model.pth")
+            torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/best_model.pth")
 
-        torch.save(model.state_dict(), "./weights/swin_transformer_v2/SwinV2_T_latest_model.pth")
+        torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/latest_model.pth")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--model_name', type=str, default="SwinV2-T")
+    parser.add_argument('--data_name', type=str, default="flower")
+    
     parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.0002)
+    parser.add_argument('--lrf', type=float, default=0.01)
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
@@ -124,7 +133,7 @@ if __name__ == '__main__':
                         default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='',
+    parser.add_argument('--weights', type=str, default='D:/weights/swin_transformer_v2/swinv2_tiny_patch4_window8_256.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)

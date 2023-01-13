@@ -1,6 +1,6 @@
 import torch
 from thop import profile
-from model import swin_small_patch4_window7_224 as create_model
+from model import swin_base_patch4_window12_384_in22k as create_model
 # from model import swinv2_large_patch4_window12_192_22k as create_model
 
 model = create_model(num_classes=1000)

@@ -10,7 +10,6 @@ from layers import ConvLayer, LinearLayer, GlobalPool, Identity
 from modules import InvertedResidual
 from modules import MobileViTBlockv2 as Block
 from init_utils import initialize_weights
-from torch.utils.checkpoint import checkpoint as gradient_checkpoint_fn
 
 
 # @register_cls_models("mobilevit_v2")
@@ -241,8 +240,9 @@ class MobileViTv2(nn.Module):
         x = self._forward_classifier(x, *args, **kwargs)
         return x
         
+        
 def mobile_vit_v2(opts):
     # pretrain weight link
-    # https://docs-assets.developer.apple.com/ml-research/models/cvnets/classification/mobilevit_xxs.pt
+    # https://github.com/apple/ml-cvnets/blob/main/docs/source/en/general/README-model-zoo.md
     m = MobileViTv2(opts)
     return m

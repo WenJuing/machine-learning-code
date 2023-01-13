@@ -18,10 +18,10 @@ from utils import read_split_data, train_one_epoch, evaluate
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    if os.path.exists("D:/weights/"+args.model_name) is False:
+        os.makedirs("D:/weights/"+args.model_name)
 
-    tb_writer = SummaryWriter()
+    writer = SummaryWriter(log_dir="./runs/train_" + args.model_name)
 
     train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
 
@@ -91,6 +91,7 @@ def main(args):
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
 
+    best_acc = 0.
     for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
@@ -107,21 +108,26 @@ def main(args):
                                      device=device,
                                      epoch=epoch)
 
-        # tags = ["train_loss", "train_acc", "val_loss", "val_acc", "learning_rate"]
-        tb_writer.add_scalar("ViT train/loss", train_loss, epoch)
-        tb_writer.add_scalar("ViT train/acc", train_acc, epoch)
-        tb_writer.add_scalar("ViT val/loss", val_loss, epoch)
-        tb_writer.add_scalar("ViT val/acc", val_acc, epoch)
-        tb_writer.add_scalar("ViT learning_rate", optimizer.param_groups[0]["lr"], epoch)
+        writer.add_scalars(args.model_name+"/"+args.data_name+" Loss", {'train': train_loss, 'val': val_loss}, epoch)
+        writer.add_scalars(args.model_name+"/"+args.data_name+" Accuracy", {'train': train_acc, 'val': val_acc}, epoch)
+        writer.add_scalar(args.model_name+"/"+args.data_name+" learning_rate", optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./weights/vision_transformer/model-{}.pth".format(epoch))
+        if val_acc > best_acc:
+            best_acc = val_acc
+            torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/best_model.pth")
+
+        torch.save(model.state_dict(), "D:/weights/"+args.model_name+"/latest_model.pth")
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--model_name', type=str, default="ViT-B/16")
+    parser.add_argument('--data_name', type=str, default="flower")
+    
     parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch-size', type=int, default=10)
+    parser.add_argument('--epochs', type=int, default=20)
+    parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
 
@@ -132,7 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--model-name', default='', help='create model name')
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default='./use_models/vision_transformer/vit_base_patch16_224_in21k.pth',
+    parser.add_argument('--weights', type=str, default='D:/weights/vision_transformer/vit_base_patch16_224_in21k.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)

@@ -313,3 +313,21 @@ class Pooling:
         dx = col2im(dcol, self.x.shape, self.pool_h, self.pool_w, self.stride, self.pad)
         
         return dx
+    
+
+class RNN:
+    def __init__(self, Wx, Wh, b) -> None:
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.cache = None   # 存储反向传播时用到的数据
+        
+    def forward(self, x, h_pre):
+        Wx, Wh, b = self.params
+        # [B, L] = tanh([B, L] * [L, L] + [B, L] * [L, L] + [1, L])
+        h_next = np.tanh(np.dot(x, Wx) + np.dot(h_pre, Wh) + b)
+        self.cache = [h_pre, x, h_next]
+        
+        return h_next
+    
+    # def backward(self, dout):
+        
