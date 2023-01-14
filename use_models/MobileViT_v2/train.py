@@ -116,16 +116,16 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--model_name', type=str, default="mobileViTv2_2.0")
+    parser.add_argument('--model_name', type=str, default="mobileViTv2_0.5")
     parser.add_argument('--data_name', type=str, default="flower")
     
     parser.add_argument('--num_classes', type=int, default=5)
     parser.add_argument('--epochs', type=int, default=20) 
     parser.add_argument('--batch-size', type=int, default=16)
-    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--lrf', type=float, default=0.01)
     
-    parser.add_argument('--width_multiplier', type=float, default=2.0, 
+    parser.add_argument('--width_multiplier', type=float, default=0.5, 
                         help='control model size, range is [0.5, 2.0]')
 
     # 数据集所在根目录
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path', type=str, default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default="D:/weights/mobileViTv2/mobilevitv2-2.0.pt")
+    parser.add_argument('--weights', type=str, default="D:/weights/mobileViTv2/mobilevitv2-0.5.pt")
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

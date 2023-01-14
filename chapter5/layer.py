@@ -329,5 +329,20 @@ class RNN:
         
         return h_next
     
-    # def backward(self, dout):
+    def backward(self, dh_next):
+        Wx, Wh, b = self.params
+        h_pre, x, h_next = self.cache
+        
+        dt = dh_next * (1 - h_next**2)
+        db = np.sum(dt, axis=0)
+        dx = np.dot(dt, Wx.T)
+        dWx = np.dot(x.T, dt)
+        dh_pre = np.dot(dt, Wh.T)
+        dWh = np.dot(h_pre.T, dt)
+        
+        self.grads[0][...] = dWx
+        self.grads[1][...] = dWh
+        self.grads[2][...] = db
+        
+        return dx, dh_pre
         

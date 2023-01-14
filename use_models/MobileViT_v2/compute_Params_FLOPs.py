@@ -13,7 +13,7 @@ def main(opt):
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser()
-    parse.add_argument('--width_multiplier', type=float, default=2.0)
+    parse.add_argument('--width_multiplier', type=float, default=1.0)
     opt = parse.parse_args()
     
     main(opt)
