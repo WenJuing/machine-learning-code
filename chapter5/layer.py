@@ -346,3 +346,18 @@ class RNN:
         
         return dx, dh_pre
         
+
+class TimeRNN:
+    def __init__(self, Wx, Wh, b, stateful=False):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.stateful = stateful    # 是否将第一个RNN的h初始化成零矩阵
+        self.layers = None
+        
+        self.h, self.dh = None, None    # 最后一个RNN的h和dh
+        
+    def set_stateful(self):
+        self.stateful = None
+        
+    def reset_stateful(self):
+        self.stateful = None
