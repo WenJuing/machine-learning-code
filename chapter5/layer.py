@@ -353,11 +353,55 @@ class TimeRNN:
         self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
         self.stateful = stateful    # 是否将第一个RNN的h初始化成零矩阵
         self.layers = None
-        
-        self.h, self.dh = None, None    # 最后一个RNN的h和dh
+        # 用于保存临时隐藏状态，执行forward完毕后保存着最后一个RNN的h和dh
+        self.h, self.dh = None, None    
         
     def set_stateful(self):
         self.stateful = None
         
     def reset_stateful(self):
         self.stateful = None
+        
+    def forward(self, xs):
+        Wx, Wh, b = self.params
+        # B：batch size, T: time lenght, D: vector lenght
+        B, T, D = xs.shape
+        D, H = Wx.shape
+        
+        self.layers = []
+        hs = np.empty((B, T, H), dtype='f')
+        
+        if not self.stateful and self.h is None:
+            self.h = np.zeros((B, H), dtype='f')
+            
+        for t in range(T):
+            # 在 Time RNN 层中有多个 RNN 层，这些 RNN 层使用相同的权重
+            layer = RNN(*self.params)   
+            self.h = layer.forward(xs[:, t, :], self.h)
+            hs[:, t, :] = self.h
+            self.layers.append(layer)
+            
+        return hs
+    
+    def backwrad(self, dhs):
+        Wx, Wh, b = self.params
+        B, T, H = dhs.shape
+        D, H = Wx.shape
+        
+        dxs = np.zeros((B, T, D), dtype='f')
+        dh = 0
+        grads = [0, 0, 0]
+        
+        for t in reversed(range(T)):
+            layer = self.layers(t)
+            dx, dh = layer.backward(dhs[:, t, :] + dh)
+            dxs[:, t, :] = dx
+            # 关于权重参数，需要求各个 RNN 层的权重梯度的和
+            for i, grad in enumerate(layer.grads):  # grad: dWx, dWh, db
+                grads[i] += grad
+            
+        for i, grad in enumerate(grads):
+            self.grads[i][...] = grad
+        self.dh = dh
+        
+        return dxs

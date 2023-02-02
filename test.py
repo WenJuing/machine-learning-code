@@ -5,15 +5,12 @@ from sklearn.metrics import mean_absolute_error, accuracy_score
 from torch.nn.functional import softmax 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from tqdm import tqdm
 import time
 import torchvision.models as models
 import argparse
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn.functional as F
 
 
-def add(num1: int, num2: int) -> int:
-    return num1 + num2
-
-print(add.__annotations__)
+print(6.0 // 3)
