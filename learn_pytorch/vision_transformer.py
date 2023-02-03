@@ -101,7 +101,6 @@ class VisionTransformer(nn.Module):
         self.dropout = nn.Dropout()
         self.blocks = nn.Sequential(*[EncoderBlock(num_heads, dim, expansion_rate) for i in range(num_blocks)])
         self.ln = nn.LayerNorm(dim)
-        self.head = nn.Linear(dim, num_classes)
         self.cls_token = nn.Parameter(torch.zeros(1, 1, dim))
         self.pos_token = nn.Parameter(torch.zeros(1, int(self.embed.num_patches)+1, dim))
         self.head = nn.Linear(dim, num_classes)
