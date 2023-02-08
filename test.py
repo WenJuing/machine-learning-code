@@ -13,4 +13,8 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 
 
-print(6.0 // 3)
+if 'head' in "head.bias":
+    print(1)
+else:
+    print(0)
+    

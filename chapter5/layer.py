@@ -405,3 +405,118 @@ class TimeRNN:
         self.dh = dh
         
         return dxs
+    
+    
+class LSTM:
+    def __init__(self, Wx, Wh, b):
+        self.parmas = [Wx, Wh, b]
+        # Wx, Wh, b 整合了四个仿射变换的参数
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.cache = None   # 保存正向传播的中间结果，将在反向传播的计算中使用
+        
+    def forward(self, x, c_pre, h_pre):
+        Wx, Wh, b = self.parmas
+        B, d = x.shape
+        
+        A = np.dot(x, Wx) + np.dot(h_pre, Wh) + b
+        # slice
+        f = sigmoid(A[:, d])
+        g = np.tanh(A[:, d:2*d])
+        i = sigmoid(A[:, 2*d:3*d])
+        o = sigmoid(A[:, 3*d:])
+        c_next = f * c_pre + g * i
+        h_next = o * np.tanh(c_next)
+        
+        self.cache = [c_next, f, g, i, o, c_pre, h_pre, x]
+        
+        return c_next, h_next
+    
+    # backward 书中没有提供代码，自己写的，可能有误，酌情阅读
+    def backward(self, dc_next, dh_next):
+        Wx, Wh, b = self.params
+        c_next, f, g, i, o, c_pre, h_pre, x = self.cache
+        t = np.tanh(c_next)
+        dt = dh_next * o
+        dc_next = dt * (1 - t**2) + dc_next
+        dc_pre = dc_next * f
+
+        do = dh_next * t
+        di = dc_next * g
+        dg = dc_next * o
+        df = dc_next * c_pre        
+        dA4 = do * o * (1 - o)
+        dA3 = di * i * (1 - i)
+        dA2 = dg * (1 - g**2)
+        dA1 = df * f * (1 - f)
+        dA = np.hstack((dA1, dA2, dA3, dA4))
+        
+        db = np.sum(dA, axis=0)
+        dh_pre = np.dot(dA, Wh.T)
+        dWh = np.dot(h_pre.T, dA)
+        dx = np.dot(dA, Wx.T)
+        dWx = np.dot(x.T, dA)
+        
+        self.grads[0][...] = dWx
+        self.grads[1][...] = dWh
+        self.grads[2][...] = db
+        
+        return dc_pre, dh_pre, dx
+    
+
+class TimeLSTM:
+    def __init__(self, Wx, Wh, b, stateful=False):
+        self.params = [Wx, Wh, b]
+        self.grads = [np.zeros_like(Wx), np.zeros_like(Wh), np.zeros_like(b)]
+        self.layers = None
+        
+        self.h, self.c = None, None
+        self.dh = None
+        self.stateful = stateful
+
+    def set_state(self, h, c=None):
+        self.h, self.c = h, c
+        
+    def reset_state(self):
+        self.h, self.c = None, None
+        
+    def forward(self, xs):
+        Wx, Wh, b = self.params
+        N, T, D = xs.shape
+        H = Wh.shape[0]
+        
+        self.layers = []
+        hs = np.empty((N, T, H), dtype='f')
+        
+        if not self.stateful or self.h is None:
+            self.h = np.zeros((N, H), dtype='f')
+        if not self.stateful or self.c is None:
+            self.c = np.zeros((N, H), dtype='f')
+            
+        for t in range(T):
+            layer = LSTM(*self.params)
+            self.h, self.c = layer.forward(xs[:, t, :], self.h, self.c)
+            hs[:, t, :] = self.h
+            self.layers.append(layer)
+            
+        return hs
+    
+    def backward(self, dhs):
+        Wx, Wh, b = self.params
+        N, T, H = dhs.shape
+        D = Wx.shape[0]
+        
+        dxs = np.empty((N, T, D), dtype='f')
+        dh, dc = 0, 0
+        
+        grads = [0, 0, 0]
+        for t in reversed(range(T)):
+            layer = self.layers[t]
+            dx, dh, dc = layer.backward(dhs[:, t, :] + dh, dc)
+            dxs[:, t, :] = dx
+            for i, grad in enumerate(layer.grads):
+                grads[i] += grad
+        for i, grad in enumerate(grads):
+            self.grads[i][...] = grad
+            self.dh = dh
+            
+        return dxs

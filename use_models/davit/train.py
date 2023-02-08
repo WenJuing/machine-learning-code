@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import mobile_vit_v2 as create_model
+from model import davit_tiny as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 
@@ -61,17 +61,21 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model(args).to(device)
+    model = create_model(num_classes=args.num_classes).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-        weights_dict = torch.load(args.weights, map_location=device)
-        weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+        checkpoint = torch.load(args.weights)
+        weights_dict = checkpoint['state_dict']
+        # weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
+        print(weights_dict.keys(), len(weights_dict.keys()))
+        print("\n")
         # 删除有关分类类别的权重
         for k in list(weights_dict.keys()):
-            if "classifier" in k:
+            if "head" in k:
                 del weights_dict[k]
-        print(model.load_state_dict(weights_dict, strict=False))    # 预训练权重中没有提供关于act的权重
+        print(model.load_state_dict(weights_dict, strict=False), len(model.load_state_dict(weights_dict, strict=False)[1]))
+    
     if args.freeze_layers:
         for name, para in model.named_parameters():
             # 除head外，其他权重全部冻结
@@ -81,7 +85,7 @@ def main(args):
                 print("training {}".format(name))
 
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=1E-2)
+    optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
     # Scheduler https://arxiv.org/pdf/1812.01187.pdf
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf  # cosine
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
@@ -116,24 +120,23 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--model_name', type=str, default="mobileViTv2_0.5")
+    parser.add_argument('--model_name', type=str, default="DaViT-Tiny")
     parser.add_argument('--data_name', type=str, default="flower")
     
     parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=20) 
+    parser.add_argument('--epochs', type=int, default=5) 
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--lrf', type=float, default=0.01)
     
-    parser.add_argument('--width_multiplier', type=float, default=0.5, 
-                        help='control model size, range is [0.5, 2.0]')
 
     # 数据集所在根目录
     # https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str, default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default="D:/weights/mobileViTv2/mobilevitv2-0.5.pt")
+    parser.add_argument('--weights', type=str, default="D:/weights/DaViT-Tiny/davit-tiny.pth")
+    # parser.add_argument('--weights', type=str, default="D:/weights/DaViT-Tiny/best_model.pth")
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
