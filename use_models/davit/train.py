@@ -9,8 +9,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import davit_tiny as create_model
-from utils import read_split_data, train_one_epoch, evaluate
+from model import davit_small as create_model
+from utils import read_split_data, train_one_epoch, evaluate, checkpoint_filter_fn
 
 
 def main(args):
@@ -62,19 +62,15 @@ def main(args):
                                              collate_fn=val_dataset.collate_fn)
 
     model = create_model(num_classes=args.num_classes).to(device)
-
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
         checkpoint = torch.load(args.weights)
-        weights_dict = checkpoint['state_dict']
-        # weights_dict = weights_dict["model"] if "model" in weights_dict else weights_dict
-        print(weights_dict.keys(), len(weights_dict.keys()))
-        print("\n")
+        weights_dict = checkpoint_filter_fn(state_dict=checkpoint['state_dict'])    # 替换关键词以便兼容官方 weight keys
         # 删除有关分类类别的权重
         for k in list(weights_dict.keys()):
             if "head" in k:
                 del weights_dict[k]
-        print(model.load_state_dict(weights_dict, strict=False), len(model.load_state_dict(weights_dict, strict=False)[1]))
+        print(model.load_state_dict(weights_dict, strict=False))
     
     if args.freeze_layers:
         for name, para in model.named_parameters():
@@ -120,11 +116,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--model_name', type=str, default="DaViT-Tiny")
+    parser.add_argument('--model_name', type=str, default="DaViT-Small")
     parser.add_argument('--data_name', type=str, default="flower")
     
     parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=5) 
+    parser.add_argument('--epochs', type=int, default=20) 
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--lrf', type=float, default=0.01)
@@ -135,8 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--data-path', type=str, default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default="D:/weights/DaViT-Tiny/davit-tiny.pth")
-    # parser.add_argument('--weights', type=str, default="D:/weights/DaViT-Tiny/best_model.pth")
+    parser.add_argument('--weights', type=str, default="D:/weights/DaViT/davit-small.pth")
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

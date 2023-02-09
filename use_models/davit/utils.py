@@ -181,61 +181,24 @@ def evaluate(model, data_loader, device, epoch):
     return accu_loss.item() / (step + 1), accu_num.item() / sample_num
 
 
-#
-# For licensing see accompanying LICENSE file.
-# Copyright (C) 2022 Apple Inc. All Rights Reserved.
-#
-from typing import Union, Optional
+def checkpoint_filter_fn(state_dict):
+    """ Remap MSFT checkpoints -> timm """
+    if 'head.fc.weight' in state_dict:
+        return state_dict  # non-MSFT checkpoint
 
+    if 'state_dict' in state_dict:
+        state_dict = state_dict['state_dict']
 
-def make_divisible(
-    v: Union[float, int],
-    divisor: Optional[int] = 8,
-    min_value: Optional[Union[float, int]] = None,
-) -> Union[float, int]:
-    """
-    This function is taken from the original tf repo.
-    It ensures that all layers have a channel number that is divisible by 8
-    It can be seen here:
-    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
-    :param v:
-    :param divisor:
-    :param min_value:
-    :return:
-    """
-    if min_value is None:
-        min_value = divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:
-        new_v += divisor
-    return new_v
-
-
-def bound_fn(
-    min_val: Union[float, int], max_val: Union[float, int], value: Union[float, int]
-) -> Union[float, int]:
-    return max(min_val, min(max_val, value))
-
-
-def module_profile(module, x: Tensor, *args, **kwargs) -> Tuple[Tensor, float, float]:
-    """
-    Helper function to profile a module.
-    .. note::
-        Module profiling is for reference only and may contain errors as it solely relies on user implementation to
-        compute theoretical FLOPs
-    """
-
-    if isinstance(module, nn.Sequential):
-        n_macs = n_params = 0.0
-        for l in module:
-            try:
-                x, l_p, l_macs = l.profile_module(x)
-                n_macs += l_macs
-                n_params += l_p
-            except Exception as e:
-                print(e, l)
-                pass
-    else:
-        x, n_params, n_macs = module.profile_module(x)
-    return x, n_params, n_macs
+    import re
+    out_dict = {}
+    for k, v in state_dict.items():
+        k = re.sub(r'patch_embeds.([0-9]+)', r'stages.\1.downsample', k)
+        k = re.sub(r'main_blocks.([0-9]+)', r'stages.\1.blocks', k)
+        k = k.replace('downsample.proj', 'downsample.conv')
+        k = k.replace('stages.0.downsample', 'stem')
+        k = k.replace('head.', 'head.fc.')
+        k = k.replace('norms.', 'head.norm.')
+        k = k.replace('cpe.0', 'cpe1')
+        k = k.replace('cpe.1', 'cpe2')
+        out_dict[k] = v
+    return out_dict

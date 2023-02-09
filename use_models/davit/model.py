@@ -11,8 +11,6 @@ DaViT model defs and weights adapted from https://github.com/dingmyu/davit, orig
 # Copyright (c) 2022 Mingyu Ding
 # All rights reserved.
 # This source code is licensed under the MIT license
-import itertools
-from collections import OrderedDict
 from functools import partial
 from typing import Tuple
 
@@ -157,7 +155,7 @@ class ChannelAttention(nn.Module):
         k = k * self.scale
         attention = k.transpose(-1, -2) @ v
         attention = attention.softmax(dim=-1)
-        x = (attention @ q.transpose(-1, -2)).transpose(-1, -2)
+        x = (attention @ q.transpose(-1, -2)).transpose(-1, -2)  # 注意，这里 x 转置回来再与 Wo 相乘
         x = x.transpose(1, 2).reshape(B, N, C)
         x = self.proj(x)
         return x
@@ -450,10 +448,6 @@ class DaViTStage(nn.Module):
             stage_blocks.append(nn.Sequential(*dual_attention_block))
         self.blocks = nn.Sequential(*stage_blocks)
 
-    @torch.jit.ignore
-    def set_grad_checkpointing(self, enable=True):
-        self.grad_checkpointing = enable
-
     def forward(self, x: Tensor):
         x = self.downsample(x)
         if self.grad_checkpointing and not torch.jit.is_scripting():
@@ -571,19 +565,6 @@ class DaViT(nn.Module):
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
 
-    @torch.jit.ignore
-    def set_grad_checkpointing(self, enable=True):
-        self.grad_checkpointing = enable
-        for stage in self.stages:
-            stage.set_grad_checkpointing(enable=enable)
-
-    @torch.jit.ignore
-    def get_classifier(self):
-        return self.head.fc
-
-    def reset_classifier(self, num_classes, global_pool=None):
-        self.head.reset(num_classes, global_pool=global_pool)
-
     def forward_features(self, x):
         x = self.stem(x)
         if self.grad_checkpointing and not torch.jit.is_scripting():
@@ -607,6 +588,8 @@ class DaViT(nn.Module):
 
 
 def davit_tiny(num_classes: int = 1000, **kwargs):
+    # trained ImageNet-1K
+    # https://drive.google.com/file/d/1RSpi3lxKaloOL5-or20HuG975tbPwxRZ/view
     model = DaViT(
         depths=(1, 1, 3, 1),
         embed_dims=(96, 192, 384, 768),
@@ -618,6 +601,8 @@ def davit_tiny(num_classes: int = 1000, **kwargs):
 
 
 def davit_small(num_classes: int = 1000, **kwargs):
+    # trained ImageNet-1K
+    # https://drive.google.com/file/d/1q976ruj45mt0RhO9oxhOo6EP_cmj4ahQ/view
     model = DaViT(
         depths=(1, 1, 9, 1),
         embed_dims=(96, 192, 384, 768),
@@ -629,6 +614,8 @@ def davit_small(num_classes: int = 1000, **kwargs):
 
 
 def davit_base(num_classes: int = 1000, **kwargs):
+    # trained ImageNet-1K
+    # https://drive.google.com/file/d/1u9sDBEueB-YFuLigvcwf4b2YyA4MIVsZ/view
     model = DaViT(
         depths=(1, 1, 9, 1),
         embed_dims=(128, 256, 512, 1024),

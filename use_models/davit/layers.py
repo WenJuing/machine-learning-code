@@ -325,11 +325,6 @@ def is_scriptable():
     return _SCRIPTABLE
 
 
-_has_hardswish = 'hardswish' in dir(torch.nn.functional)
-_has_hardsigmoid = 'hardsigmoid' in dir(torch.nn.functional)
-_has_mish = 'mish' in dir(torch.nn.functional)
-
-
 _ACT_LAYER_ME = dict(
     silu=nn.SiLU,
     swish=nn.SiLU,
