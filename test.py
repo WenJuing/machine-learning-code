@@ -13,8 +13,4 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 
 
-if 'head' in "head.bias":
-    print(1)
-else:
-    print(0)
-    
+print(torch.cuda.is_available())
