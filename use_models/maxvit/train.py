@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import max_vit_tiny_224 as create_model
+from model import max_vit_small_224 as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 
@@ -117,11 +117,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--model_name', type=str, default="MaxViT-T")
+    parser.add_argument('--model_name', type=str, default="MaxViT-S")
     parser.add_argument('--data_name', type=str, default="flower")
     
     parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=10) 
+    parser.add_argument('--epochs', type=int, default=30) 
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--lrf', type=float, default=0.01)
@@ -132,7 +132,8 @@ if __name__ == '__main__':
     parser.add_argument('--data-path', type=str, default="./data/flower_photos")
 
     # 预训练权重路径，如果不想载入就设置为空字符
-    parser.add_argument('--weights', type=str, default="D:/weights/MaxViT-S/best_model.pth")
+    # parser.add_argument('--weights', type=str, default="D:/weights/MaxViT-S/best_model.pth")
+    parser.add_argument('--weights', type=str, default="")
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')

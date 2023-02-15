@@ -12,5 +12,7 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 
-
-print(torch.cuda.is_available())
+x = torch.randn(2, 3)
+print(x)
+print(torch.amax(x, 0))  # 按行比较
+print(torch.amax(x, 1))  # 按列比较

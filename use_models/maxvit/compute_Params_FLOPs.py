@@ -1,6 +1,6 @@
 import torch
 from thop import profile
-from model import max_vit_tiny_224 as create_model
+from model import max_vit_small_224 as create_model
 
 model = create_model()
 input = torch.randn(1, 3, 224, 224)  # batch_size不影响计算结果

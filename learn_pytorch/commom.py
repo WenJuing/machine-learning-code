@@ -1,8 +1,7 @@
 import torch
 import torch.utils.data as Data
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, models
-from torchvision.datasets import FashionMNIST, MNIST, ImageFolder
+from torchvision.datasets import FashionMNIST, MNIST, ImageFolder, CIFAR100
 from sklearn.datasets import load_diabetes, load_boston, fetch_california_housing
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -15,7 +14,6 @@ from tqdm import tqdm
 from thop import profile
 import re
 import string
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import os
@@ -49,6 +47,33 @@ def get_MNIST_loader():
     y_test = test_data.targets  # y_test.shape = [10000]
     
     return data_loader, X_test, y_test
+
+
+def get_CIFAR100_loader(batch_size=128):
+    # num_classes 100
+    # train (50000, 1, 32, 32)
+    # test (10000, 1, 32, 32)
+    train_data = CIFAR100(root="./data/CIFAR100", train=True, transform=transforms.ToTensor(), download=False)
+    train_loader = Data.DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, num_workers=1)
+    
+    test_data = CIFAR100(root="./data/CIFAR100", train=False, transform=transforms.ToTensor(), download=False)
+    test_loader = Data.DataLoader(dataset=test_data, batch_size=batch_size, shuffle=True, num_workers=1)
+
+    
+    return train_loader, test_loader
+
+
+def get_flower_loader(batch_size=10):
+    # data size: 3670
+    # class size: 5
+    data_transforms = transforms.Compose([transforms.RandomResizedCrop(224),
+                                          transforms.RandomHorizontalFlip(),
+                                          transforms.ToTensor(),
+                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+    train_data = ImageFolder("./data/flower_photos", transform=data_transforms)
+    data_loader = Data.DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=2)
+    
+    return data_loader
 
 
 def get_spambase(test_size=0.25):
@@ -158,18 +183,6 @@ def get_california_loader():
     
     return data_loader, X_test, y_test
 
-def get_flower_loader(batch_size=10):
-    # data size: 3670
-    # class size: 5
-    data_transforms = transforms.Compose([transforms.RandomResizedCrop(224),
-                                          transforms.RandomHorizontalFlip(),
-                                          transforms.ToTensor(),
-                                          transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-    train_data = ImageFolder("./data/flower_photos", transform=data_transforms)
-    data_loader = Data.DataLoader(dataset=train_data, batch_size=batch_size, shuffle=True, pin_memory=True, num_workers=2)
-    
-    return data_loader
-
 
 def preprocess_image_to_input(image):
     """将一张图片处理成符合神经网络输入的形式"""
@@ -184,16 +197,20 @@ def preprocess_image_to_input(image):
 
 
 # 实用工具
-def show_data(data_loader):
+def draw_data(data_loader):
     """显示一个batch size的图片"""
     for batch_x, batch_y in data_loader:
         break
     batch_size = len(batch_x)
     row = int(np.ceil(batch_size/16))
     batch_x = batch_x.squeeze()
+    plt.figure(figsize=(15, 8))
     for i in range(batch_size):
         plt.subplot(row, 16, i+1)
-        plt.imshow(batch_x[i], cmap=plt.cm.gray)
+        if batch_x[i].ndim == 3:
+            plt.imshow(batch_x[i].permute(1, 2, 0))
+        else:
+            plt.imshow(batch_x[i], cmap=plt.cm.gray)
         plt.title(batch_y[i].item(), size=9)
         plt.axis("off")
         plt.subplots_adjust(hspace=0.05,wspace=0.05)
@@ -213,47 +230,63 @@ def show_corrcoef(df):
     plt.show()
     
 
-def train_model(model, data_loader, loss_function, optimizer, epochs, device, 
-                model_name=None, dataset_name=None, is_rnn=False, scheduler=None):
+def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
+                is_rnn=False):
     model.train()
-    sw = SummaryWriter(log_dir="./runs/train_" + model_name)
     accu_loss = torch.zeros(1).to(device)    # 累计损失
     accu_num = torch.zeros(1).to(device)     # 累计预测正确的样本数
     optimizer.zero_grad()
     
     sample_num = 0
-    cur_loss = 0
-    cur_acc = 0
-    print("model:", model_name, "| dataset:", dataset_name, "| device:", device)
-    for epoch in range(epochs):
-        data_loader = tqdm(data_loader)     # 显示进度条
-        for _, (images, labels) in enumerate(data_loader):
-            sample_num += images.shape[0]
-            # 若模型为rnn，则输入数据 [B, C, H, W] -> [B, time_step, input_dim]=[B, H, W]
-            if is_rnn:
-                images = images.mean(dim=1)
-                # images = images.view(-1, images.shape[2], images.shape[3])
-            pred = model(images.to(device))
-            pred_classes = torch.argmax(pred, 1)
-            accu_num += torch.eq(pred_classes, labels.to(device)).sum()
-            
-            loss = loss_function(pred, labels.to(device))
-            loss.backward()
-            accu_loss += loss.detach()
-            
-            cur_loss, cur_acc = accu_loss.item() / sample_num, accu_num.item() / sample_num
-            data_loader.set_description("[train epoch %d] loss: %.3f, acc: %.3f" % (epoch, cur_loss, cur_acc))
-            optimizer.step()
-            optimizer.zero_grad()
+    data_loader = tqdm(data_loader)     # 显示进度条
+    for _, (images, labels) in enumerate(data_loader):
+        sample_num += images.shape[0]
+        # 若模型为rnn，则输入数据 [B, C, H, W] -> [B, time_step, input_dim]=[B, H, W]
+        if is_rnn:
+            images = images.mean(dim=1)
+            # images = images.view(-1, images.shape[2], images.shape[3])
+        pred = model(images.to(device))
+        pred_classes = torch.argmax(pred, 1)
+        accu_num += torch.eq(pred_classes, labels.to(device)).sum()
         
-            if scheduler:
-                scheduler.step()
-            
-        sw.add_scalars(model_name+"/"+dataset_name+" Loss", {'train': cur_loss}, epoch)
-        sw.add_scalars(model_name+"/"+dataset_name+" Accuracy", {'train': cur_acc}, epoch)
-        sw.add_scalar(model_name+"/"+dataset_name+" learning_rate", optimizer.param_groups[0]["lr"], epoch)
+        loss = loss_function(pred, labels.to(device))
+        loss.backward()
+        accu_loss += loss.detach()
         
-    return model
+        loss, acc = accu_loss.item() / sample_num, accu_num.item() / sample_num
+        optimizer.step()
+        optimizer.zero_grad()
+        
+        data_loader.set_description("[train epoch %d] loss: %.3f, acc: %.3f" % (epoch, loss, acc))
+        
+    return loss, acc
+
+
+def test(model, data_loader, loss_function, epoch, device, is_rnn=False):
+    model.eval()
+    accu_loss = torch.zeros(1).to(device)    # 累计损失
+    accu_num = torch.zeros(1).to(device)     # 累计预测正确的样本数
+    
+    sample_num = 0
+    data_loader = tqdm(data_loader)     # 显示进度条
+    for _, (images, labels) in enumerate(data_loader):
+        sample_num += images.shape[0]
+        # 若模型为rnn，则输入数据 [B, C, H, W] -> [B, time_step, input_dim]=[B, H, W]
+        if is_rnn:
+            images = images.mean(dim=1)
+            # images = images.view(-1, images.shape[2], images.shape[3])
+        pred = model(images.to(device))
+        pred_classes = torch.argmax(pred, 1)
+        accu_num += torch.eq(pred_classes, labels.to(device)).sum()
+        
+        loss = loss_function(pred, labels.to(device))
+        accu_loss += loss.detach()
+        
+        loss, acc = accu_loss.item() / sample_num, accu_num.item() / sample_num
+        
+        data_loader.set_description("[test epoch %d] loss: %.3f, acc: %.3f" % (epoch, loss, acc))
+        
+    return loss, acc
 
 
 def get_vgg16_feature():
@@ -313,10 +346,7 @@ if __name__ == '__main__':
     # data_loader = get_boston_loader()
     # data_loader, X_test, y_test = get_MNIST_loader()
     # data_loader, X_test, y_test = get_FashionMNIST_loader()
-    data_loader = get_flower_loader()
+    data_loader, X_test, y_test = get_CIFAR100_loader()
     # for step, (X_batch, y_batch) in enumerate(data_loader):
-    #     img = X_batch[0]
-    #     print(X_batch.shape)
-    #     print(y_batch.shape)
-    #     print(y_batch)
     #     break
+    draw_data(data_loader)

@@ -618,7 +618,7 @@ class MaxViT(nn.Module):
             self,
             in_channels: int = 3,
             depths: Tuple[int, ...] = (2, 2, 5, 2),
-            channels: Tuple[int, ...] = (64, 128, 256, 512),
+            channels: Tuple[int, ...] = (64, 128, 256, 512),    # 四个 stage 的输出通道
             num_classes: int = 1000,
             embed_dim: int = 64,
             num_heads: int = 32,
