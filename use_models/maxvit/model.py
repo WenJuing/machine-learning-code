@@ -293,7 +293,7 @@ class RelativeSelfAttention(nn.Module):
         self.attn_area: int = grid_window_size[0] * grid_window_size[1]
         # Init layers
         self.qkv_mapping = nn.Linear(in_features=in_channels, out_features=3 * in_channels, bias=True)
-        self.attn_drop = nn.Dropout(p=attn_drop)
+        self.attn_drop = nn.Dropout(p=attn_drop)    # 没有使用（应该在 softmax 后使用）
         self.proj = nn.Linear(in_features=in_channels, out_features=in_channels, bias=True)
         self.proj_drop = nn.Dropout(p=drop)
         self.softmax = nn.Softmax(dim=-1)

@@ -12,7 +12,11 @@ import argparse
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 
-x = torch.randn(2, 3)
-print(x)
-print(torch.amax(x, 0))  # 按行比较
-print(torch.amax(x, 1))  # 按列比较
+
+x = torch.tensor([1, 2, -3, 4, -5])
+relu = nn.ReLU()
+print(relu(x))
+print(x)    # x 未改变
+relu = nn.ReLU(inplace=True)
+print(relu(x))
+print(x)    # x 改变
